@@ -86,6 +86,7 @@ export interface Task {
   deadline?: string;
   attachments?: string[];
   task_type?: 'Today' | 'Tomorrow' | 'Next 2–3 Days' | 'This Week' | 'Next Week';
+  requirements?: Requirement[];
   created_at: string;
   updated_at: string;
 }

@@ -24,6 +24,7 @@ import Inventory from './pages/Inventory';
 import Assets from './pages/Assets';
 import FinancialReports from './pages/FinancialReports';
 import PasswordVault from './pages/PasswordVault';
+import Requirements from './pages/Requirements';
 import Layout from './components/Layout';
 import ClientDashboard from './pages/ClientPortal/ClientDashboard';
 import ClientProjects from './pages/ClientPortal/ClientProjects';
@@ -69,6 +70,7 @@ function App() {
             <Route path="teams" element={<Teams />} />
             <Route path="payments" element={<Payments />} />
             <Route path="password-vault" element={<PasswordVault />} />
+            <Route path="requirements" element={<Requirements />} />
             <Route path="activity-logs" element={<ActivityLogs />} />
             <Route path="team-member/dashboard" element={<TeamMemberDashboard />} />
             <Route path="leave-requests" element={<LeaveRequests />} />

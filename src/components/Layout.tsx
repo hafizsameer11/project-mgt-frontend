@@ -1,8 +1,9 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import { LogOut, LayoutDashboard, Users, Briefcase, CheckSquare, UserCircle, Menu, X, Users2, DollarSign, FileText, Calendar, CreditCard, Package, MessageSquare, Store, Lock } from 'lucide-react';
+import { LogOut, LayoutDashboard, Users, Briefcase, CheckSquare, UserCircle, Menu, X, Users2, DollarSign, FileText, Calendar, CreditCard, Package, MessageSquare, Store, Lock, Bell } from 'lucide-react';
 import { useState } from 'react';
 import { Badge } from './ui/Badge';
+import NotificationBell from './NotificationBell';
 
 export default function Layout() {
   const { user, logout } = useAuthStore();
@@ -34,7 +35,7 @@ export default function Layout() {
     }
     
     if (isTeamMember) {
-      return [
+      const items = [
         { path: '/team-member/dashboard', label: 'My Dashboard', icon: LayoutDashboard },
         { path: '/tasks', label: 'My Tasks', icon: CheckSquare },
         { path: '/leave-requests', label: 'Leave Requests', icon: Calendar },
@@ -42,6 +43,13 @@ export default function Layout() {
         { path: '/general-requests', label: 'Requests', icon: Package },
         { path: '/chat', label: 'Chat', icon: MessageSquare },
       ];
+      
+      // Add Projects for Project Managers
+      if (user?.role === 'Project Manager') {
+        items.splice(2, 0, { path: '/projects', label: 'Projects', icon: Briefcase });
+      }
+      
+      return items;
     }
     
     return [
@@ -50,6 +58,7 @@ export default function Layout() {
       { path: '/clients', label: 'Clients', icon: Users },
       { path: '/projects', label: 'Projects', icon: Briefcase },
       { path: '/tasks', label: 'Tasks', icon: CheckSquare },
+      { path: '/requirements', label: 'Requirements', icon: FileText },
       { path: '/teams', label: 'Teams', icon: Users2 },
       { path: '/payments', label: 'Payments', icon: DollarSign },
       { path: '/password-vault', label: 'Password Vault', icon: Lock },

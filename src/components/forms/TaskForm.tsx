@@ -5,7 +5,10 @@ import { Textarea } from '../ui/Textarea';
 import { Button } from '../ui/Button';
 import { Task } from '../../types';
 import { projectService } from '../../services/projectService';
-import { Project } from '../../types';
+import { Project, User } from '../../types';
+import { requirementService, Requirement } from '../../services/requirementService';
+import api from '../../services/api';
+import { useAuthStore } from '../../store/authStore';
 
 interface TaskFormProps {
   task?: Task;
@@ -34,6 +37,12 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   });
 
   const [projects, setProjects] = useState<Project[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [requirements, setRequirements] = useState<Requirement[]>([]);
+  const [selectedRequirementIds, setSelectedRequirementIds] = useState<number[]>([]);
+  const { user: currentUser } = useAuthStore();
+  
+  const canAssignTasks = currentUser?.role === 'Admin' || currentUser?.role === 'Project Manager';
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -46,6 +55,26 @@ export const TaskForm: React.FC<TaskFormProps> = ({
     };
     fetchProjects();
   }, []);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      if (!canAssignTasks) return;
+      
+      try {
+        // Admin can assign to anyone, PM can only assign to developers
+        const roleFilter = currentUser?.role === 'Admin' ? undefined : 'Developer';
+        const params = roleFilter ? { role: roleFilter } : {};
+        const response = await api.get('/users', { params });
+        const usersData = Array.isArray(response.data.data) 
+          ? response.data.data 
+          : (Array.isArray(response.data) ? response.data : []);
+        setUsers(usersData);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    };
+    fetchUsers();
+  }, [canAssignTasks, currentUser]);
 
   useEffect(() => {
     if (task) {
@@ -61,12 +90,32 @@ export const TaskForm: React.FC<TaskFormProps> = ({
         deadline: task.deadline || '',
         task_type: task.task_type,
       });
+      if (task.requirements) {
+        setSelectedRequirementIds(task.requirements.map((r: Requirement) => r.id));
+      }
     }
   }, [task]);
 
+  useEffect(() => {
+    const fetchRequirements = async () => {
+      if (formData.project_id) {
+        try {
+          const response = await requirementService.getAll(formData.project_id);
+          const data = Array.isArray(response.data) ? response.data : (Array.isArray(response) ? response : []);
+          setRequirements(data);
+        } catch (error) {
+          console.error('Error fetching requirements:', error);
+        }
+      } else {
+        setRequirements([]);
+      }
+    };
+    fetchRequirements();
+  }, [formData.project_id]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit(formData);
+    await onSubmit({ ...formData, requirement_ids: selectedRequirementIds });
   };
 
   return (
@@ -94,6 +143,18 @@ export const TaskForm: React.FC<TaskFormProps> = ({
           ...projects.map(p => ({ value: p.id.toString(), label: p.title })),
         ]}
       />
+
+      {canAssignTasks && (
+        <Select
+          label="Assign To"
+          value={formData.assigned_to || ''}
+          onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value ? parseInt(e.target.value) : undefined })}
+          options={[
+            { value: '', label: 'Unassigned (My Task)' },
+            ...users.map(u => ({ value: u.id.toString(), label: u.name })),
+          ]}
+        />
+      )}
 
       <Select
         label="Priority"
@@ -157,6 +218,36 @@ export const TaskForm: React.FC<TaskFormProps> = ({
           { value: 'Next Week', label: 'Next Week' },
         ]}
       />
+
+      {formData.project_id && requirements.length > 0 && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Attach Requirements
+          </label>
+          <div className="space-y-2 max-h-40 overflow-y-auto border border-gray-300 rounded-md p-3">
+            {requirements.map((req) => (
+              <label key={req.id} className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedRequirementIds.includes(req.id)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedRequirementIds([...selectedRequirementIds, req.id]);
+                    } else {
+                      setSelectedRequirementIds(selectedRequirementIds.filter(id => id !== req.id));
+                    }
+                  }}
+                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span className="text-sm">{req.title}</span>
+                {req.type === 'document' && (
+                  <span className="text-xs text-gray-500">({req.document_name})</span>
+                )}
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex justify-end gap-3 pt-4">
         <Button type="button" variant="outline" onClick={onCancel}>

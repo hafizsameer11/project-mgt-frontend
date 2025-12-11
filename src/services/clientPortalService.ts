@@ -13,7 +13,8 @@ export interface ClientPortalDashboard {
 export const clientPortalService = {
   async getDashboard(): Promise<ClientPortalDashboard> {
     const response = await api.get<ClientPortalDashboard>('/client-portal/dashboard');
-    return response.data;
+    // Handle both direct data and wrapped response
+    return response.data.data || response.data;
   },
 
   async getProjects() {
