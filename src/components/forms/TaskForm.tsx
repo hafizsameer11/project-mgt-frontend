@@ -23,11 +23,13 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   onCancel,
   isLoading = false,
 }) => {
+  const { user: currentUser } = useAuthStore();
+  
   const [formData, setFormData] = useState<Partial<Task & { actual_time?: number }>>({
     title: '',
     description: '',
     project_id: undefined,
-    assigned_to: undefined,
+    assigned_to: currentUser?.id,
     priority: 'Medium',
     status: 'Pending',
     estimated_hours: undefined,
@@ -40,9 +42,8 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   const [users, setUsers] = useState<User[]>([]);
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [selectedRequirementIds, setSelectedRequirementIds] = useState<number[]>([]);
-  const { user: currentUser } = useAuthStore();
   
-  const canAssignTasks = currentUser?.role === 'Admin' || currentUser?.role === 'Project Manager';
+  const canAssignToOthers = currentUser?.role === 'Admin' || currentUser?.role === 'Project Manager';
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -58,13 +59,15 @@ export const TaskForm: React.FC<TaskFormProps> = ({
 
   useEffect(() => {
     const fetchUsers = async () => {
-      if (!canAssignTasks) return;
+      if (!canAssignToOthers) {
+        // For developers, still show "Me" option but no other users
+        setUsers([]);
+        return;
+      }
       
       try {
-        // Admin can assign to anyone, PM can only assign to developers
-        const roleFilter = currentUser?.role === 'Admin' ? undefined : 'Developer';
-        const params = roleFilter ? { role: roleFilter } : {};
-        const response = await api.get('/users', { params });
+        // Both Admin and PM can assign to anyone
+        const response = await api.get('/users');
         const usersData = Array.isArray(response.data.data) 
           ? response.data.data 
           : (Array.isArray(response.data) ? response.data : []);
@@ -74,7 +77,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
       }
     };
     fetchUsers();
-  }, [canAssignTasks, currentUser]);
+  }, [canAssignToOthers, currentUser]);
 
   useEffect(() => {
     if (task) {
@@ -82,7 +85,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
         title: task.title || '',
         description: task.description || '',
         project_id: task.project_id,
-        assigned_to: task.assigned_to,
+        assigned_to: task.assigned_to || currentUser?.id,
         priority: task.priority || 'Medium',
         status: task.status || 'Pending',
         estimated_hours: task.estimated_hours,
@@ -93,8 +96,14 @@ export const TaskForm: React.FC<TaskFormProps> = ({
       if (task.requirements) {
         setSelectedRequirementIds(task.requirements.map((r: Requirement) => r.id));
       }
+    } else if (currentUser) {
+      // For new tasks, ensure assigned_to is set to current user
+      setFormData(prev => ({
+        ...prev,
+        assigned_to: prev.assigned_to || currentUser.id,
+      }));
     }
-  }, [task]);
+  }, [task, currentUser]);
 
   useEffect(() => {
     const fetchRequirements = async () => {
@@ -115,7 +124,13 @@ export const TaskForm: React.FC<TaskFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit({ ...formData, requirement_ids: selectedRequirementIds });
+    // Ensure assigned_to is always set (default to current user if not set)
+    const submitData = {
+      ...formData,
+      assigned_to: formData.assigned_to || currentUser?.id,
+      requirement_ids: selectedRequirementIds,
+    };
+    await onSubmit(submitData);
   };
 
   return (
@@ -144,17 +159,21 @@ export const TaskForm: React.FC<TaskFormProps> = ({
         ]}
       />
 
-      {canAssignTasks && (
-        <Select
-          label="Assign To"
-          value={formData.assigned_to || ''}
-          onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value ? parseInt(e.target.value) : undefined })}
-          options={[
-            { value: '', label: 'Unassigned (My Task)' },
-            ...users.map(u => ({ value: u.id.toString(), label: u.name })),
-          ]}
-        />
-      )}
+      <Select
+        label="Assign To"
+        value={formData.assigned_to || currentUser?.id || ''}
+        onChange={(e) => {
+          const value = e.target.value;
+          setFormData({ 
+            ...formData, 
+            assigned_to: value ? parseInt(value) : (currentUser?.id || undefined)
+          });
+        }}
+        options={[
+          { value: currentUser?.id.toString() || '', label: `Me (${currentUser?.name || 'Current User'})` },
+          ...(canAssignToOthers ? users.filter(u => u.id !== currentUser?.id).map(u => ({ value: u.id.toString(), label: u.name })) : []),
+        ]}
+      />
 
       <Select
         label="Priority"

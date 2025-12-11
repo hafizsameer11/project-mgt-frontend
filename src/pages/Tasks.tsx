@@ -38,10 +38,10 @@ export default function Tasks() {
     fetchTasks();
   }, []);
 
-  const fetchTasks = async () => {
+  const fetchTasks = async (filters?: Record<string, any>) => {
     try {
       setLoading(true);
-      const response = await taskService.getAll();
+      const response = await taskService.getAll(filters);
       setTasks(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Error fetching tasks:', error);
@@ -171,7 +171,23 @@ export default function Tasks() {
           </h1>
           <p className="text-gray-600">Organize and track your work - Drag tasks to change status</p>
         </div>
-        <Button onClick={handleCreate}>+ Add Task</Button>
+        <div className="flex gap-3">
+          <select
+            value={''}
+            onChange={(e) => {
+              if (e.target.value === 'my_tasks' && user?.id) {
+                fetchTasks({ assigned_to: user.id });
+              } else {
+                fetchTasks();
+              }
+            }}
+            className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          >
+            <option value="">All Tasks</option>
+            <option value="my_tasks">My Tasks Only</option>
+          </select>
+          <Button onClick={handleCreate}>+ Add Task</Button>
+        </div>
       </div>
 
       {/* Kanban Board */}
