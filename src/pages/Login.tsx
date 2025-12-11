@@ -147,13 +147,13 @@ export default function Login() {
           </form>
 
           {/* Demo Credentials */}
-          <div className="mt-6 pt-6 border-t border-gray-200">
+          {/* <div className="mt-6 pt-6 border-t border-gray-200">
             <p className="text-xs text-center text-gray-500 mb-2">Admin Credentials:</p>
             <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-600">
               <p><span className="font-semibold">Email:</span> admin@admin.com</p>
               <p><span className="font-semibold">Password:</span> 11221122</p>
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Footer */}
