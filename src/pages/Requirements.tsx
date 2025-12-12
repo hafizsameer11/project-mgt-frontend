@@ -23,14 +23,17 @@ export default function Requirements() {
   const [filterProjectId, setFilterProjectId] = useState<number | ''>('');
 
   const canManage = user?.role === 'Admin' || user?.role === 'Project Manager';
+  const canView = canManage || user?.role === 'Developer';
 
   useEffect(() => {
-    if (!canManage) {
+    if (!canView) {
       return;
     }
-    fetchProjects();
+    if (canManage) {
+      fetchProjects();
+    }
     fetchRequirements();
-  }, [canManage, filterProjectId]);
+  }, [canView, canManage, filterProjectId]);
 
   const fetchProjects = async () => {
     try {
@@ -140,7 +143,7 @@ export default function Requirements() {
     return <Badge variant={variants[priority] || 'default'}>{priority}</Badge>;
   };
 
-  if (!canManage) {
+  if (!canView) {
     return (
       <div className="px-4 py-6 sm:px-0">
         <div className="text-center text-gray-600">You don't have permission to view this page.</div>
@@ -195,7 +198,7 @@ export default function Requirements() {
         return <span className="text-gray-400">N/A</span>;
       },
     },
-    {
+    ...(canManage ? [{
       key: 'actions',
       header: 'Actions',
       render: (req: Requirement) => (
@@ -208,7 +211,7 @@ export default function Requirements() {
           </Button>
         </div>
       ),
-    },
+    }] : []),
   ];
 
   return (
@@ -220,21 +223,23 @@ export default function Requirements() {
           </h1>
           <p className="text-gray-600">Manage project requirements and documents</p>
         </div>
-        <div className="flex gap-3">
-          <select
-            value={filterProjectId}
-            onChange={(e) => setFilterProjectId(e.target.value ? Number(e.target.value) : '')}
-            className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-          >
-            <option value="">All Projects</option>
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.title}
-              </option>
-            ))}
-          </select>
-          <Button onClick={() => handleCreate()}>+ Add Requirement</Button>
-        </div>
+        {canManage && (
+          <div className="flex gap-3">
+            <select
+              value={filterProjectId}
+              onChange={(e) => setFilterProjectId(e.target.value ? Number(e.target.value) : '')}
+              className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            >
+              <option value="">All Projects</option>
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.title}
+                </option>
+              ))}
+            </select>
+            <Button onClick={() => handleCreate()}>+ Add Requirement</Button>
+          </div>
+        )}
       </div>
 
       <div className="bg-white shadow rounded-lg">

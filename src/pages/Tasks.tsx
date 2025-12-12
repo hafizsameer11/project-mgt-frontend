@@ -19,6 +19,9 @@ export default function Tasks() {
   const [detailTask, setDetailTask] = useState<Task | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
+  const [activeTab, setActiveTab] = useState<'my-tasks' | 'other-tasks'>('my-tasks');
+  
+  const isAdmin = user?.role === 'Admin';
   
   const canDelete = (task: Task) => {
     // Developers cannot delete any tasks
@@ -35,8 +38,16 @@ export default function Tasks() {
   const statuses = ['Pending', 'In Progress', 'Completed'];
 
   useEffect(() => {
-    fetchTasks();
-  }, []);
+    if (isAdmin) {
+      if (activeTab === 'my-tasks') {
+        fetchTasks({ created_by: user?.id });
+      } else {
+        fetchTasks({ exclude_created_by: user?.id });
+      }
+    } else {
+      fetchTasks();
+    }
+  }, [isAdmin, activeTab, user?.id]);
 
   const fetchTasks = async (filters?: Record<string, any>) => {
     try {
@@ -172,23 +183,53 @@ export default function Tasks() {
           <p className="text-gray-600">Organize and track your work - Drag tasks to change status</p>
         </div>
         <div className="flex gap-3">
-          <select
-            value={''}
-            onChange={(e) => {
-              if (e.target.value === 'my_tasks' && user?.id) {
-                fetchTasks({ assigned_to: user.id });
-              } else {
-                fetchTasks();
-              }
-            }}
-            className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-          >
-            <option value="">All Tasks</option>
-            <option value="my_tasks">My Tasks Only</option>
-          </select>
+          {!isAdmin && (
+            <select
+              value={''}
+              onChange={(e) => {
+                if (e.target.value === 'my_tasks' && user?.id) {
+                  fetchTasks({ assigned_to: user.id });
+                } else {
+                  fetchTasks();
+                }
+              }}
+              className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            >
+              <option value="">All Tasks</option>
+              <option value="my_tasks">My Tasks Only</option>
+            </select>
+          )}
           <Button onClick={handleCreate}>+ Add Task</Button>
         </div>
       </div>
+
+      {/* Admin Tabs */}
+      {isAdmin && (
+        <div className="mb-6 border-b border-gray-200">
+          <nav className="flex space-x-8">
+            <button
+              onClick={() => setActiveTab('my-tasks')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'my-tasks'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              My Tasks
+            </button>
+            <button
+              onClick={() => setActiveTab('other-tasks')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'other-tasks'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Other Developers' Tasks
+            </button>
+          </nav>
+        </div>
+      )}
 
       {/* Kanban Board */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

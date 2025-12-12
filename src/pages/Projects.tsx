@@ -7,14 +7,18 @@ import { DataTable } from '../components/ui/DataTable';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../store/authStore';
 
 export default function Projects() {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const canManage = user?.role === 'Admin' || user?.role === 'Project Manager';
 
   useEffect(() => {
     fetchProjects();
@@ -108,12 +112,16 @@ export default function Projects() {
           <Button size="sm" variant="primary" onClick={() => navigate(`/projects/${project.id}`)}>
             View
           </Button>
-          <Button size="sm" variant="outline" onClick={() => handleEdit(project)}>
-            Edit
-          </Button>
-          <Button size="sm" variant="danger" onClick={() => handleDelete(project.id)}>
-            Delete
-          </Button>
+          {canManage && (
+            <>
+              <Button size="sm" variant="outline" onClick={() => handleEdit(project)}>
+                Edit
+              </Button>
+              <Button size="sm" variant="danger" onClick={() => handleDelete(project.id)}>
+                Delete
+              </Button>
+            </>
+          )}
         </div>
       ),
     },
@@ -126,9 +134,11 @@ export default function Projects() {
           <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
             Projects
           </h1>
-          <p className="text-gray-600">Track and manage all your projects</p>
+          <p className="text-gray-600">
+            {canManage ? 'Track and manage all your projects' : 'View your assigned projects'}
+          </p>
         </div>
-        <Button onClick={handleCreate}>+ Add Project</Button>
+        {canManage && <Button onClick={handleCreate}>+ Add Project</Button>}
       </div>
 
       <div className="bg-white shadow rounded-lg">

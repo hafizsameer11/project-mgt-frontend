@@ -44,9 +44,10 @@ export default function Layout() {
         { path: '/chat', label: 'Chat', icon: MessageSquare },
       ];
       
-      // Add Projects for Project Managers
-      if (user?.role === 'Project Manager') {
+      // Add Projects and Requirements for Project Managers and Developers
+      if (user?.role === 'Project Manager' || user?.role === 'Developer') {
         items.splice(2, 0, { path: '/projects', label: 'Projects', icon: Briefcase });
+        items.splice(3, 0, { path: '/requirements', label: 'Requirements', icon: FileText });
       }
       
       return items;
