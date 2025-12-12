@@ -36,6 +36,7 @@ export default function ProjectDetail() {
   const [isRequirementModalOpen, setIsRequirementModalOpen] = useState(false);
   const [selectedRequirement, setSelectedRequirement] = useState<Requirement | undefined>();
   const { user } = useAuthStore();
+  const canManagePayments = user?.role === 'Admin' || user?.role === 'Project Manager';
   const [isBdPaymentModalOpen, setIsBdPaymentModalOpen] = useState(false);
   const [isPmPaymentModalOpen, setIsPmPaymentModalOpen] = useState(false);
   const [selectedBdPayment, setSelectedBdPayment] = useState<any>(undefined);
@@ -398,16 +399,20 @@ export default function ProjectDetail() {
 
         <TabsContent value="bd-payments">
           <Card>
-            <div className="mb-4 p-4 bg-indigo-50 rounded-lg border border-indigo-200">
-              <p className="text-sm text-indigo-800">
-                <strong>💡 Allocate Budget to Business Developer:</strong> Set payment for BD on this project. 
-                Choose between <strong>Percentage</strong> (e.g., 15% of project budget) or <strong>Fixed Amount</strong> (e.g., $500).
-                The system will automatically calculate the total amount based on your choice.
-              </p>
-            </div>
+            {canManagePayments && (
+              <div className="mb-4 p-4 bg-indigo-50 rounded-lg border border-indigo-200">
+                <p className="text-sm text-indigo-800">
+                  <strong>💡 Allocate Budget to Business Developer:</strong> Set payment for BD on this project. 
+                  Choose between <strong>Percentage</strong> (e.g., 15% of project budget) or <strong>Fixed Amount</strong> (e.g., $500).
+                  The system will automatically calculate the total amount based on your choice.
+                </p>
+              </div>
+            )}
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-semibold text-gray-900">Business Developer Payments</h2>
-              <Button onClick={() => setIsBdPaymentModalOpen(true)}>+ Allocate BD Payment</Button>
+              {canManagePayments && (
+                <Button onClick={() => setIsBdPaymentModalOpen(true)}>+ Allocate BD Payment</Button>
+              )}
             </div>
 
             <DataTable
@@ -471,7 +476,7 @@ export default function ProjectDetail() {
                     return <Badge variant={statusVariants[payment.status] || 'default'}>{payment.status}</Badge>;
                   },
                 },
-                {
+                ...(canManagePayments ? [{
                   key: 'actions',
                   header: 'Actions',
                   render: (payment: any) => (
@@ -501,7 +506,7 @@ export default function ProjectDetail() {
                       </Button>
                     </div>
                   ),
-                },
+                }] : []),
               ]}
               loading={false}
             />
@@ -510,16 +515,20 @@ export default function ProjectDetail() {
 
         <TabsContent value="pm-payments">
           <Card>
-            <div className="mb-4 p-4 bg-green-50 rounded-lg border border-green-200">
-              <p className="text-sm text-green-800">
-                <strong>💡 Allocate Budget to Project Manager:</strong> Set payment for PM on this project. 
-                Choose between <strong>Percentage</strong> (e.g., 10% of project budget) or <strong>Fixed Amount</strong> (e.g., $1000).
-                The system will automatically calculate the total amount based on your choice.
-              </p>
-            </div>
+            {canManagePayments && (
+              <div className="mb-4 p-4 bg-green-50 rounded-lg border border-green-200">
+                <p className="text-sm text-green-800">
+                  <strong>💡 Allocate Budget to Project Manager:</strong> Set payment for PM on this project. 
+                  Choose between <strong>Percentage</strong> (e.g., 10% of project budget) or <strong>Fixed Amount</strong> (e.g., $1000).
+                  The system will automatically calculate the total amount based on your choice.
+                </p>
+              </div>
+            )}
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-semibold text-gray-900">Project Manager Payments</h2>
-              <Button onClick={() => setIsPmPaymentModalOpen(true)}>+ Allocate PM Payment</Button>
+              {canManagePayments && (
+                <Button onClick={() => setIsPmPaymentModalOpen(true)}>+ Allocate PM Payment</Button>
+              )}
             </div>
 
             <DataTable
@@ -583,7 +592,7 @@ export default function ProjectDetail() {
                     return <Badge variant={statusVariants[payment.status] || 'default'}>{payment.status}</Badge>;
                   },
                 },
-                {
+                ...(canManagePayments ? [{
                   key: 'actions',
                   header: 'Actions',
                   render: (payment: any) => (
@@ -613,7 +622,7 @@ export default function ProjectDetail() {
                       </Button>
                     </div>
                   ),
-                },
+                }] : []),
               ]}
               loading={false}
             />
@@ -622,16 +631,20 @@ export default function ProjectDetail() {
 
         <TabsContent value="developer-payments">
           <Card>
-            <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-sm text-blue-800">
-                <strong>💡 Allocate Budget to Developers:</strong> Assign a specific amount to each developer for this project. 
-                This is a <strong>variable amount</strong> per project (not a percentage or fixed rate). 
-                You can set any amount based on the project budget and each developer's contribution.
-              </p>
-            </div>
+            {canManagePayments && (
+              <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <p className="text-sm text-blue-800">
+                  <strong>💡 Allocate Budget to Developers:</strong> Assign a specific amount to each developer for this project. 
+                  This is a <strong>variable amount</strong> per project (not a percentage or fixed rate). 
+                  You can set any amount based on the project budget and each developer's contribution.
+                </p>
+              </div>
+            )}
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-semibold text-gray-900">Developer Payments</h2>
-              <Button onClick={() => setIsDevPaymentModalOpen(true)}>+ Allocate Developer Payment</Button>
+              {canManagePayments && (
+                <Button onClick={() => setIsDevPaymentModalOpen(true)}>+ Allocate Developer Payment</Button>
+              )}
             </div>
 
             <DataTable
@@ -664,7 +677,7 @@ export default function ProjectDetail() {
                     );
                   },
                 },
-                {
+                ...(canManagePayments ? [{
                   key: 'actions',
                   header: 'Actions',
                   render: (payment: any) => (
@@ -694,7 +707,7 @@ export default function ProjectDetail() {
                       </Button>
                     </div>
                   ),
-                },
+                }] : []),
               ]}
               loading={false}
             />
