@@ -6,7 +6,7 @@ import { TaskForm } from '../components/forms/TaskForm';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { FileText, GripVertical, Calendar, User, FolderKanban, Clock, Edit, Trash2, X } from 'lucide-react';
+import { FileText, GripVertical, Calendar, User, FolderKanban, Clock, Edit, Trash2, X, Play, Pause, Square } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 
 export default function Tasks() {
@@ -20,8 +20,11 @@ export default function Tasks() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
   const [activeTab, setActiveTab] = useState<'my-tasks' | 'other-tasks'>('my-tasks');
+  const [activeTimers, setActiveTimers] = useState<Record<number, any>>({});
+  const [timerIntervals, setTimerIntervals] = useState<Record<number, NodeJS.Timeout>>({});
   
   const isAdmin = user?.role === 'Admin';
+  const isDeveloper = user?.role === 'Developer';
   
   const canDelete = (task: Task) => {
     // Developers cannot delete any tasks
@@ -35,19 +38,52 @@ export default function Tasks() {
     return true;
   };
 
-  const statuses = ['Pending', 'In Progress', 'Completed'];
+  const statuses = ['Pending', 'In Progress', 'Review', 'Completed'];
 
   useEffect(() => {
     if (isAdmin) {
       if (activeTab === 'my-tasks') {
-        fetchTasks({ created_by: user?.id });
+        // Show only Admin's personal tasks (created by and assigned to admin)
+        fetchTasks({ created_by: user?.id, assigned_to: user?.id });
       } else {
-        fetchTasks({ exclude_created_by: user?.id });
+        // Show tasks NOT created by admin AND NOT assigned to admin
+        fetchTasks({ exclude_created_by: user?.id, exclude_assigned_to: user?.id });
       }
     } else {
       fetchTasks();
     }
   }, [isAdmin, activeTab, user?.id]);
+
+  // Fetch active timers for all tasks
+  useEffect(() => {
+    const fetchActiveTimers = async () => {
+      const timerMap: Record<number, any> = {};
+      for (const task of tasks) {
+        if (task.assigned_to === user?.id) {
+          try {
+            const response = await taskService.getActiveTimer(task.id);
+            if (response.timer) {
+              timerMap[task.id] = response.timer;
+            }
+          } catch (error) {
+            // Ignore errors
+          }
+        }
+      }
+      setActiveTimers(timerMap);
+    };
+
+    if (tasks.length > 0 && user?.id) {
+      fetchActiveTimers();
+    }
+  }, [tasks, user?.id]);
+
+  // Cleanup intervals on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(timerIntervals).forEach(interval => clearInterval(interval));
+    };
+  }, [timerIntervals]);
 
   const fetchTasks = async (filters?: Record<string, any>) => {
     try {
@@ -66,9 +102,20 @@ export default function Tasks() {
     setIsModalOpen(true);
   };
 
-  const handleTaskClick = (task: Task) => {
+  const handleTaskClick = async (task: Task) => {
     setDetailTask(task);
     setIsDetailModalOpen(true);
+    // Fetch active timer for this task
+    if (task.assigned_to === user?.id) {
+      try {
+        const response = await taskService.getActiveTimer(task.id);
+        if (response.timer) {
+          setActiveTimers(prev => ({ ...prev, [task.id]: response.timer }));
+        }
+      } catch (error) {
+        // Ignore errors
+      }
+    }
   };
 
   const handleEdit = (task: Task) => {
@@ -142,10 +189,93 @@ export default function Tasks() {
     }
   };
 
+  const handleStartTimer = async (taskId: number) => {
+    try {
+      const response = await taskService.startTimer(taskId);
+      setActiveTimers(prev => ({ ...prev, [taskId]: response }));
+      fetchTasks();
+    } catch (error) {
+      console.error('Error starting timer:', error);
+      alert('Error starting timer');
+    }
+  };
+
+  const handlePauseTimer = async (timerId: number, taskId: number) => {
+    try {
+      await taskService.pauseTimer(timerId);
+      setActiveTimers(prev => {
+        const updated = { ...prev };
+        if (updated[taskId]) {
+          updated[taskId] = { ...updated[taskId], paused_at: new Date().toISOString() };
+        }
+        return updated;
+      });
+      if (timerIntervals[taskId]) {
+        clearInterval(timerIntervals[taskId]);
+        setTimerIntervals(prev => {
+          const updated = { ...prev };
+          delete updated[taskId];
+          return updated;
+        });
+      }
+      fetchTasks();
+    } catch (error) {
+      console.error('Error pausing timer:', error);
+      alert('Error pausing timer');
+    }
+  };
+
+  const handleResumeTimer = async (timerId: number, taskId: number) => {
+    try {
+      await taskService.resumeTimer(timerId);
+      setActiveTimers(prev => {
+        const updated = { ...prev };
+        if (updated[taskId]) {
+          updated[taskId] = { ...updated[taskId], paused_at: null, started_at: new Date().toISOString() };
+        }
+        return updated;
+      });
+      fetchTasks();
+    } catch (error) {
+      console.error('Error resuming timer:', error);
+      alert('Error resuming timer');
+    }
+  };
+
+  const handleEndTimer = async (timerId: number, taskId: number) => {
+    if (!confirm('Are you sure you want to end this task? The status will be changed to Review.')) {
+      return;
+    }
+    try {
+      await taskService.stopTimer(timerId);
+      setActiveTimers(prev => {
+        const updated = { ...prev };
+        delete updated[taskId];
+        return updated;
+      });
+      if (timerIntervals[taskId]) {
+        clearInterval(timerIntervals[taskId]);
+        setTimerIntervals(prev => {
+          const updated = { ...prev };
+          delete updated[taskId];
+          return updated;
+        });
+      }
+      fetchTasks();
+      if (detailTask?.id === taskId) {
+        setIsDetailModalOpen(false);
+      }
+    } catch (error) {
+      console.error('Error ending timer:', error);
+      alert('Error ending timer');
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const variants: Record<string, 'default' | 'success' | 'warning' | 'danger' | 'info'> = {
       'Pending': 'default',
       'In Progress': 'warning',
+      'Review': 'info',
       'Completed': 'success',
     };
     return <Badge variant={variants[status] || 'default'}>{status}</Badge>;
@@ -232,7 +362,7 @@ export default function Tasks() {
       )}
 
       {/* Kanban Board */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statuses.map((status) => (
           <div
             key={status}
@@ -269,17 +399,79 @@ export default function Tasks() {
                           {getPriorityBadge(task.priority)}
                         </span>
                       )}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEdit(task);
-                        }}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1"
-                      >
-                        <Edit className="w-3 h-3" />
-                      </Button>
+                      {/* Timer buttons for assigned users */}
+                      {task.assigned_to === user?.id && task.status !== 'Completed' && task.status !== 'Review' && (
+                        <>
+                          {!activeTimers[task.id] ? (
+                            <Button
+                              size="sm"
+                              variant="primary"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleStartTimer(task.id);
+                              }}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1"
+                              title="Start Timer"
+                            >
+                              <Play className="w-3 h-3" />
+                            </Button>
+                          ) : activeTimers[task.id].paused_at ? (
+                            <Button
+                              size="sm"
+                              variant="primary"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleResumeTimer(activeTimers[task.id].id, task.id);
+                              }}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1"
+                              title="Resume Timer"
+                            >
+                              <Play className="w-3 h-3" />
+                            </Button>
+                          ) : (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="warning"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handlePauseTimer(activeTimers[task.id].id, task.id);
+                                }}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1"
+                                title="Pause Timer"
+                              >
+                                <Pause className="w-3 h-3" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="danger"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEndTimer(activeTimers[task.id].id, task.id);
+                                }}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1"
+                                title="End Task"
+                              >
+                                <Square className="w-3 h-3" />
+                              </Button>
+                            </>
+                          )}
+                        </>
+                      )}
+                      {/* Edit button - only for Admin and PM, not for developers */}
+                      {!isDeveloper && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(task);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1"
+                        >
+                          <Edit className="w-3 h-3" />
+                        </Button>
+                      )}
                       {canDelete(task) && (
                         <Button
                           size="sm"
@@ -435,18 +627,64 @@ export default function Tasks() {
             )}
 
             {/* Action Buttons */}
-            <div className="flex gap-3 pt-4 border-t">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setIsDetailModalOpen(false);
-                  handleEdit(detailTask);
-                }}
-                className="flex-1"
-              >
-                <Edit className="w-4 h-4 mr-2" />
-                Edit Task
-              </Button>
+            <div className="flex gap-3 pt-4 border-t flex-wrap">
+              {/* Timer buttons for assigned users */}
+              {detailTask.assigned_to === user?.id && detailTask.status !== 'Completed' && detailTask.status !== 'Review' && (
+                <div className="flex gap-2 w-full mb-2">
+                  {!activeTimers[detailTask.id] ? (
+                    <Button
+                      variant="primary"
+                      onClick={() => handleStartTimer(detailTask.id)}
+                      className="flex-1"
+                    >
+                      <Play className="w-4 h-4 mr-2" />
+                      Start Timer
+                    </Button>
+                  ) : activeTimers[detailTask.id].paused_at ? (
+                    <Button
+                      variant="primary"
+                      onClick={() => handleResumeTimer(activeTimers[detailTask.id].id, detailTask.id)}
+                      className="flex-1"
+                    >
+                      <Play className="w-4 h-4 mr-2" />
+                      Resume Timer
+                    </Button>
+                  ) : (
+                    <>
+                      <Button
+                        variant="warning"
+                        onClick={() => handlePauseTimer(activeTimers[detailTask.id].id, detailTask.id)}
+                        className="flex-1"
+                      >
+                        <Pause className="w-4 h-4 mr-2" />
+                        Pause Timer
+                      </Button>
+                      <Button
+                        variant="danger"
+                        onClick={() => handleEndTimer(activeTimers[detailTask.id].id, detailTask.id)}
+                        className="flex-1"
+                      >
+                        <Square className="w-4 h-4 mr-2" />
+                        End Task
+                      </Button>
+                    </>
+                  )}
+                </div>
+              )}
+              {/* Edit button - only for Admin and PM */}
+              {!isDeveloper && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsDetailModalOpen(false);
+                    handleEdit(detailTask);
+                  }}
+                  className="flex-1"
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit Task
+                </Button>
+              )}
               {canDelete(detailTask) && (
                 <Button
                   variant="danger"

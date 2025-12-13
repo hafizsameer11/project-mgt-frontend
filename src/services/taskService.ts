@@ -31,6 +31,21 @@ export const taskService = {
     return response.data;
   },
 
+  async getActiveTimer(taskId: number) {
+    const response = await api.get(`/tasks/${taskId}/timer/active`);
+    return response.data;
+  },
+
+  async pauseTimer(timerId: number) {
+    const response = await api.post(`/tasks/timer/${timerId}/pause`);
+    return response.data;
+  },
+
+  async resumeTimer(timerId: number) {
+    const response = await api.post(`/tasks/timer/${timerId}/resume`);
+    return response.data;
+  },
+
   async stopTimer(timerId: number) {
     const response = await api.post(`/tasks/timer/${timerId}/stop`);
     return response.data;

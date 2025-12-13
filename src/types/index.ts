@@ -80,7 +80,7 @@ export interface Task {
   created_by?: number;
   creator?: User;
   priority?: 'Low' | 'Medium' | 'High' | 'Critical';
-  status: 'Pending' | 'In Progress' | 'Completed';
+  status: 'Pending' | 'In Progress' | 'Completed' | 'Review';
   estimated_hours?: number;
   actual_time?: number;
   deadline?: string;
