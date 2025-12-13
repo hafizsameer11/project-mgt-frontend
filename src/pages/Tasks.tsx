@@ -542,61 +542,63 @@ export default function Tasks() {
 
             {/* Details Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {detailTask.project && (
-                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                  <FolderKanban className="w-5 h-5 text-indigo-600 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Project</p>
-                    <p className="text-gray-900 font-semibold">{detailTask.project.title}</p>
-                  </div>
+              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                <FolderKanban className="w-5 h-5 text-indigo-600 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Project</p>
+                  <p className="text-gray-900 font-semibold">
+                    {detailTask.project?.title || 'No project assigned'}
+                  </p>
                 </div>
-              )}
+              </div>
 
-              {detailTask.creator && (
-                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                  <User className="w-5 h-5 text-blue-600 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Created By</p>
-                    <p className="text-gray-900 font-semibold">{detailTask.creator.name}</p>
-                  </div>
+              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                <User className="w-5 h-5 text-blue-600 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Created By</p>
+                  <p className="text-gray-900 font-semibold">
+                    {detailTask.creator?.name || 'Unknown'}
+                  </p>
                 </div>
-              )}
+              </div>
 
-              {detailTask.assigned_user && (
-                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                  <User className="w-5 h-5 text-green-600 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Assigned To</p>
-                    <p className="text-gray-900 font-semibold">{detailTask.assigned_user.name}</p>
-                  </div>
+              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                <User className="w-5 h-5 text-green-600 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Assigned To</p>
+                  <p className="text-gray-900 font-semibold">
+                    {detailTask.assigned_user?.name || 'Unassigned'}
+                  </p>
                 </div>
-              )}
+              </div>
 
-              {detailTask.deadline && (
-                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                  <Calendar className="w-5 h-5 text-red-600 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Deadline</p>
-                    <p className="text-gray-900 font-semibold">
-                      {new Date(detailTask.deadline).toLocaleDateString('en-US', {
+              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                <Calendar className="w-5 h-5 text-red-600 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Deadline</p>
+                  <p className="text-gray-900 font-semibold">
+                    {detailTask.deadline ? (
+                      new Date(detailTask.deadline).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric'
-                      })}
-                    </p>
-                  </div>
+                      })
+                    ) : (
+                      'No deadline set'
+                    )}
+                  </p>
                 </div>
-              )}
+              </div>
 
-              {detailTask.estimated_hours && (
-                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                  <Clock className="w-5 h-5 text-purple-600 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Estimated Hours</p>
-                    <p className="text-gray-900 font-semibold">{detailTask.estimated_hours} hrs</p>
-                  </div>
+              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                <Clock className="w-5 h-5 text-purple-600 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Estimated Hours</p>
+                  <p className="text-gray-900 font-semibold">
+                    {detailTask.estimated_hours ? `${detailTask.estimated_hours} hrs` : 'Not estimated'}
+                  </p>
                 </div>
-              )}
+              </div>
 
               <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
                 <Clock className="w-5 h-5 text-orange-600 mt-0.5" />
@@ -623,15 +625,15 @@ export default function Tasks() {
                 </div>
               </div>
 
-              {detailTask.task_type && (
-                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                  <Calendar className="w-5 h-5 text-indigo-600 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Task Type</p>
-                    <p className="text-gray-900 font-semibold">{detailTask.task_type}</p>
-                  </div>
+              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                <Calendar className="w-5 h-5 text-indigo-600 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Task Type</p>
+                  <p className="text-gray-900 font-semibold">
+                    {detailTask.task_type || 'Not specified'}
+                  </p>
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Requirements Section */}
