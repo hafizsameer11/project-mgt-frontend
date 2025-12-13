@@ -38,22 +38,75 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
 
   const [clients, setClients] = useState<Client[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [loadingTeams, setLoadingTeams] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [clientsRes, teamsRes] = await Promise.all([
-          clientService.getAll(),
-          teamService.getAll(),
-        ]);
+        const clientsRes = await clientService.getAll();
         setClients(Array.isArray(clientsRes.data) ? clientsRes.data : []);
-        setTeams(Array.isArray(teamsRes.data) ? teamsRes.data : []);
+        await fetchAllTeams();
       } catch (error) {
         console.error('Error fetching data:', error);
       }
     };
     fetchData();
   }, []);
+
+  const fetchAllTeams = async () => {
+    try {
+      setLoadingTeams(true);
+      let allTeams: Team[] = [];
+      let currentPage = 1;
+      let hasMore = true;
+
+      // First, try to get all teams with a high per_page limit
+      try {
+        const response = await teamService.getAll({ page: 1, per_page: 1000 });
+        const pageTeams = Array.isArray(response.data) ? response.data : [];
+        if (response.meta && response.meta.total <= pageTeams.length) {
+          // Got all teams in one request
+          setTeams(pageTeams);
+          return;
+        }
+        // If not all, continue with pagination
+        allTeams = [...allTeams, ...pageTeams];
+        if (response.meta) {
+          hasMore = currentPage < response.meta.last_page;
+          currentPage = 2; // Start from page 2
+        }
+      } catch (e) {
+        // If per_page doesn't work, fall back to default pagination
+        console.log('Large per_page not supported, using pagination');
+      }
+
+      // Fetch remaining pages if needed
+      while (hasMore) {
+        const response = await teamService.getAll({ page: currentPage });
+        const pageTeams = Array.isArray(response.data) ? response.data : [];
+        allTeams = [...allTeams, ...pageTeams];
+        
+        // Check if there are more pages
+        if (response.meta) {
+          hasMore = currentPage < response.meta.last_page;
+          currentPage++;
+        } else {
+          hasMore = pageTeams.length === 15; // Assume 15 per page if no meta
+          currentPage++;
+        }
+        
+        // Safety check to prevent infinite loops
+        if (currentPage > 100) break;
+      }
+      
+      setTeams(allTeams);
+    } catch (error) {
+      console.error('Error fetching teams:', error);
+    } finally {
+      setLoadingTeams(false);
+    }
+  };
 
   useEffect(() => {
     if (project) {
@@ -189,19 +242,75 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Team Members
         </label>
-        <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
-          {teams.map((team) => (
-            <label key={team.id} className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={formData.team_ids?.includes(team.id) || false}
-                onChange={() => handleTeamToggle(team.id)}
-                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-              />
-              <span className="text-sm text-gray-700">{team.full_name}</span>
-            </label>
-          ))}
-        </div>
+        
+        {/* Search Input */}
+        <Input
+          placeholder="Search team members by name, email, or role..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="mb-3"
+        />
+        
+        {loadingTeams ? (
+          <div className="text-center py-4">
+            <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+            <p className="mt-2 text-sm text-gray-500">Loading team members...</p>
+          </div>
+        ) : (
+          <div className="space-y-2 max-h-60 overflow-y-auto border rounded-md p-3 bg-gray-50">
+            {(() => {
+              const filteredTeams = teams.filter((team) => {
+                const query = searchQuery.toLowerCase();
+                return (
+                  team.full_name?.toLowerCase().includes(query) ||
+                  team.email?.toLowerCase().includes(query) ||
+                  team.role?.toLowerCase().includes(query) ||
+                  team.phone?.toLowerCase().includes(query)
+                );
+              });
+
+              if (filteredTeams.length === 0) {
+                return (
+                  <div className="text-center py-4 text-sm text-gray-500">
+                    {searchQuery ? 'No team members found matching your search.' : 'No team members available.'}
+                  </div>
+                );
+              }
+
+              return filteredTeams.map((team) => (
+                <label
+                  key={team.id}
+                  className="flex items-center space-x-3 p-2 hover:bg-white rounded cursor-pointer transition-colors"
+                >
+                  <input
+                    type="checkbox"
+                    checked={formData.team_ids?.includes(team.id) || false}
+                    onChange={() => handleTeamToggle(team.id)}
+                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <div className="flex-1">
+                    <span className="text-sm font-medium text-gray-900">{team.full_name}</span>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-xs text-gray-500">{team.role}</span>
+                      {team.email && (
+                        <>
+                          <span className="text-xs text-gray-400">•</span>
+                          <span className="text-xs text-gray-500">{team.email}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </label>
+              ));
+            })()}
+          </div>
+        )}
+        
+        {formData.team_ids && formData.team_ids.length > 0 && (
+          <div className="mt-2 text-sm text-gray-600">
+            {formData.team_ids.length} team member{formData.team_ids.length !== 1 ? 's' : ''} selected
+          </div>
+        )}
       </div>
 
       <div className="flex justify-end gap-3 pt-4">
