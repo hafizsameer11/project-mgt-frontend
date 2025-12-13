@@ -677,7 +677,7 @@ export default function Tasks() {
             )}
 
             {/* Complete Time Log Section */}
-            {detailTask.assigned_to === user?.id && detailTask.timers && detailTask.timers.length > 0 && (
+            {detailTask.timers && detailTask.timers.length > 0 && (
               <div className="border-t pt-4">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
                   <Clock className="w-5 h-5 text-orange-600" />
@@ -691,8 +691,9 @@ export default function Tasks() {
                       return dateA - dateB;
                     })
                     .map((timer: any) => {
-                      const isActive = !timer.stopped_at && !timer.paused_at;
-                      const isPaused = timer.paused_at && !timer.stopped_at;
+                      // Timer is paused if paused_at exists but no resumed_at (resumed_at is set when resuming)
+                      const isPaused = timer.paused_at && !timer.resumed_at && !timer.stopped_at;
+                      const isActive = !timer.stopped_at && !isPaused;
                       const isCompleted = !!timer.stopped_at;
                       
                       // Calculate current time if active
@@ -743,17 +744,17 @@ export default function Tasks() {
                           </div>
                           
                           <div className="space-y-1.5 text-sm">
-                            {timer.started_at && (
+                            {timer.original_started_at && (
                               <div className="flex items-start gap-2">
-                                <span className="text-green-600 font-medium min-w-[80px]">
-                                  {timer.paused_at ? 'Started:' : isActive ? 'Started:' : 'Last Started:'}
-                                </span>
+                                <span className="text-green-600 font-medium min-w-[80px]">First Started:</span>
+                                <span className="text-gray-700">{formatTime(timer.original_started_at)}</span>
+                              </div>
+                            )}
+                            
+                            {timer.started_at && timer.original_started_at !== timer.started_at && (
+                              <div className="flex items-start gap-2">
+                                <span className="text-blue-600 font-medium min-w-[80px]">Last Resumed:</span>
                                 <span className="text-gray-700">{formatTime(timer.started_at)}</span>
-                                {timer.paused_at && timer.started_at && (
-                                  <span className="text-gray-500 text-xs ml-2">
-                                    (Ran for {round((new Date(timer.paused_at).getTime() - new Date(timer.started_at).getTime()) / 3600000, 2)} hrs)
-                                  </span>
-                                )}
                               </div>
                             )}
                             
@@ -761,21 +762,31 @@ export default function Tasks() {
                               <div className="flex items-start gap-2">
                                 <span className="text-yellow-600 font-medium min-w-[80px]">Paused:</span>
                                 <span className="text-gray-700">{formatTime(timer.paused_at)}</span>
+                                {timer.started_at && (
+                                  <span className="text-gray-500 text-xs ml-2">
+                                    (Worked {round((new Date(timer.paused_at).getTime() - new Date(timer.started_at).getTime()) / 3600000, 2)} hrs in this session)
+                                  </span>
+                                )}
                               </div>
                             )}
                             
-                            {isActive && timer.started_at && timer.paused_at === null && (
-                              <div className="flex items-start gap-2 text-xs text-blue-600 italic">
-                                <span className="min-w-[80px]">Note:</span>
-                                <span>Timer may have been resumed. Current session started at {formatTime(timer.started_at)}</span>
+                            {timer.resumed_at && (
+                              <div className="flex items-start gap-2">
+                                <span className="text-green-600 font-medium min-w-[80px]">Resumed:</span>
+                                <span className="text-gray-700">{formatTime(timer.resumed_at)}</span>
+                                {timer.paused_at && (
+                                  <span className="text-gray-500 text-xs ml-2">
+                                    (Paused for {round((new Date(timer.resumed_at).getTime() - new Date(timer.paused_at).getTime()) / 3600, 2)} hrs)
+                                  </span>
+                                )}
                               </div>
                             )}
                             
                             {isPaused && timer.paused_at && timer.started_at && (
                               <div className="flex items-start gap-2">
-                                <span className="text-blue-600 font-medium min-w-[80px]">Duration:</span>
+                                <span className="text-blue-600 font-medium min-w-[80px]">Session Duration:</span>
                                 <span className="text-gray-700">
-                                  {round((new Date(timer.paused_at).getTime() - new Date(timer.started_at).getTime()) / 3600000, 2)} hrs (before pause)
+                                  {round((new Date(timer.paused_at).getTime() - new Date(timer.started_at).getTime()) / 3600000, 2)} hrs
                                 </span>
                               </div>
                             )}
@@ -796,6 +807,33 @@ export default function Tasks() {
                               <div className="flex items-start gap-2">
                                 <span className="text-red-600 font-medium min-w-[80px]">Ended:</span>
                                 <span className="text-gray-700">{formatTime(timer.stopped_at)}</span>
+                              </div>
+                            )}
+                            
+                            {/* Pause History */}
+                            {timer.pause_history && Array.isArray(timer.pause_history) && timer.pause_history.length > 0 && (
+                              <div className="mt-3 pt-3 border-t border-gray-200">
+                                <div className="text-xs font-semibold text-gray-600 mb-2">Pause/Resume History:</div>
+                                <div className="space-y-1">
+                                  {timer.pause_history.map((event: any, idx: number) => (
+                                    <div key={idx} className="text-xs text-gray-600 flex items-center gap-2">
+                                      <span className={`w-2 h-2 rounded-full ${event.type === 'pause' ? 'bg-yellow-500' : 'bg-green-500'}`}></span>
+                                      <span className="capitalize">{event.type}</span>
+                                      <span className="text-gray-400">at</span>
+                                      <span>{formatTime(event.at)}</span>
+                                      {event.type === 'pause' && event.seconds_before_pause && (
+                                        <span className="text-gray-500">
+                                          (worked {round(event.seconds_before_pause / 3600, 2)} hrs)
+                                        </span>
+                                      )}
+                                      {event.type === 'resume' && event.pause_duration_seconds && (
+                                        <span className="text-gray-500">
+                                          (paused for {round(event.pause_duration_seconds / 3600, 2)} hrs)
+                                        </span>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
                             )}
                             
