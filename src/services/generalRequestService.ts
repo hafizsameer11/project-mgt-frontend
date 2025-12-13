@@ -9,6 +9,8 @@ export interface GeneralRequest {
   status: 'Pending' | 'Approved' | 'Rejected' | 'In Progress';
   approved_by?: number;
   response?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export const generalRequestService = {

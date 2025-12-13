@@ -1,18 +1,30 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { pushNotificationService } from '../services/pushNotificationService';
+import { useEffect } from 'react';
 import { LogOut, LayoutDashboard, Users, Briefcase, CheckSquare, UserCircle, Menu, X, Users2, DollarSign, FileText, Calendar, CreditCard, Package, MessageSquare, Store, Lock, Bell } from 'lucide-react';
 import { useState } from 'react';
 import { Badge } from './ui/Badge';
 import NotificationBell from './NotificationBell';
 
 export default function Layout() {
-  const { user, logout } = useAuthStore();
+  const { user, logout, isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Initialize push notifications when user is authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      pushNotificationService.initialize().catch((error) => {
+        console.error('Failed to initialize push notifications:', error);
+      });
+    }
+  }, [isAuthenticated, user]);
+
   const handleLogout = async () => {
+    await pushNotificationService.unsubscribe().catch(console.error);
     await logout();
     navigate('/login');
   };

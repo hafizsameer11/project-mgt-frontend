@@ -15,8 +15,13 @@ export default function GeneralRequests() {
   const [requests, setRequests] = useState<GeneralRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<GeneralRequest | null>(null);
+  const [adminResponse, setAdminResponse] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userTeam, setUserTeam] = useState<any>(null);
+  const isAdmin = user?.role === 'Admin';
+  const canApprove = isAdmin;
   const [formData, setFormData] = useState<Partial<GeneralRequest>>({
     team_id: undefined,
     title: '',
@@ -38,7 +43,9 @@ export default function GeneralRequests() {
   const fetchRequests = async () => {
     try {
       setLoading(true);
-      const response = await generalRequestService.getAll();
+      // Admins see all requests, team members see only their own
+      const filters = isAdmin ? {} : (userTeam ? { team_id: userTeam.id } : {});
+      const response = await generalRequestService.getAll(filters);
       setRequests(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Error fetching general requests:', error);
@@ -93,6 +100,32 @@ export default function GeneralRequests() {
     }
   };
 
+  const handleViewRequest = (req: GeneralRequest) => {
+    setSelectedRequest(req);
+    setAdminResponse(req.response || '');
+    setIsDetailModalOpen(true);
+  };
+
+  const handleApproveReject = async (status: 'Approved' | 'Rejected' | 'In Progress') => {
+    if (!selectedRequest) return;
+    try {
+      setIsSubmitting(true);
+      await generalRequestService.update(selectedRequest.id, {
+        status,
+        response: adminResponse || undefined,
+      });
+      setIsDetailModalOpen(false);
+      setSelectedRequest(null);
+      setAdminResponse('');
+      fetchRequests();
+    } catch (error) {
+      console.error(`Error ${status.toLowerCase()} request:`, error);
+      alert(`Error ${status.toLowerCase()} request`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const variants: Record<string, 'default' | 'success' | 'warning' | 'danger' | 'info'> = {
       'Pending': 'warning',
@@ -125,6 +158,15 @@ export default function GeneralRequests() {
       header: 'Description',
       render: (req: GeneralRequest) => req.description || 'N/A',
     },
+    {
+      key: 'actions',
+      header: 'Actions',
+      render: (req: GeneralRequest) => (
+        <Button size="sm" variant="outline" onClick={() => handleViewRequest(req)}>
+          View Details
+        </Button>
+      ),
+    },
   ];
 
   return (
@@ -136,13 +178,156 @@ export default function GeneralRequests() {
           </h1>
           <p className="text-gray-600">Request equipment, software, training, or other needs</p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)}>+ New Request</Button>
+        {!isAdmin && <Button onClick={() => setIsModalOpen(true)}>+ New Request</Button>}
       </div>
 
       <div className="bg-white shadow rounded-lg">
         <DataTable data={requests} columns={columns} loading={loading} />
       </div>
 
+      {/* Detail/Approval Modal */}
+      <Modal
+        isOpen={isDetailModalOpen}
+        onClose={() => {
+          setIsDetailModalOpen(false);
+          setSelectedRequest(null);
+          setAdminResponse('');
+        }}
+        title="Request Details"
+        size="lg"
+      >
+        {selectedRequest && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Team Member</p>
+                <p className="text-gray-900 font-semibold">
+                  {(selectedRequest as any).team?.full_name || 'N/A'}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">Status</p>
+                <div className="mt-1">{getStatusBadge(selectedRequest.status)}</div>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">Category</p>
+                <p className="text-gray-900 font-semibold">{selectedRequest.category || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">Created</p>
+                <p className="text-gray-900 font-semibold">
+                  {selectedRequest.created_at
+                    ? new Date(selectedRequest.created_at).toLocaleDateString()
+                    : 'N/A'}
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-sm font-medium text-gray-500 mb-1">Title</p>
+              <p className="text-gray-900 font-semibold">{selectedRequest.title}</p>
+            </div>
+
+            <div>
+              <p className="text-sm font-medium text-gray-500 mb-1">Description</p>
+              <p className="text-gray-600">{selectedRequest.description || 'No description'}</p>
+            </div>
+
+            {selectedRequest.response && (
+              <div>
+                <p className="text-sm font-medium text-gray-500 mb-1">Admin Response</p>
+                <p className="text-gray-600 bg-gray-50 p-3 rounded-lg">
+                  {selectedRequest.response}
+                </p>
+              </div>
+            )}
+
+            {canApprove && selectedRequest.status === 'Pending' && (
+              <div className="pt-4 border-t">
+                <Textarea
+                  label="Response (Optional)"
+                  value={adminResponse}
+                  onChange={(e) => setAdminResponse(e.target.value)}
+                  rows={3}
+                  placeholder="Add a response or note..."
+                />
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    variant="success"
+                    onClick={() => handleApproveReject('Approved')}
+                    isLoading={isSubmitting}
+                    className="flex-1"
+                  >
+                    Approve
+                  </Button>
+                  <Button
+                    variant="warning"
+                    onClick={() => handleApproveReject('In Progress')}
+                    isLoading={isSubmitting}
+                    className="flex-1"
+                  >
+                    Mark In Progress
+                  </Button>
+                  <Button
+                    variant="danger"
+                    onClick={() => handleApproveReject('Rejected')}
+                    isLoading={isSubmitting}
+                    className="flex-1"
+                  >
+                    Reject
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {canApprove && selectedRequest.status !== 'Pending' && (
+              <div className="pt-4 border-t">
+                <Textarea
+                  label="Update Response"
+                  value={adminResponse}
+                  onChange={(e) => setAdminResponse(e.target.value)}
+                  rows={3}
+                  placeholder="Update response or add notes..."
+                />
+                <div className="flex gap-3 pt-4">
+                  {selectedRequest.status !== 'Approved' && (
+                    <Button
+                      variant="success"
+                      onClick={() => handleApproveReject('Approved')}
+                      isLoading={isSubmitting}
+                      className="flex-1"
+                    >
+                      Approve
+                    </Button>
+                  )}
+                  {selectedRequest.status !== 'In Progress' && (
+                    <Button
+                      variant="warning"
+                      onClick={() => handleApproveReject('In Progress')}
+                      isLoading={isSubmitting}
+                      className="flex-1"
+                    >
+                      Mark In Progress
+                    </Button>
+                  )}
+                  {selectedRequest.status !== 'Rejected' && (
+                    <Button
+                      variant="danger"
+                      onClick={() => handleApproveReject('Rejected')}
+                      isLoading={isSubmitting}
+                      className="flex-1"
+                    >
+                      Reject
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
+
+      {/* Create Request Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
