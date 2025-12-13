@@ -38,10 +38,47 @@ export default function Teams() {
   const [createAccount, setCreateAccount] = useState(false);
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
+  const [pagination, setPagination] = useState({
+    current_page: 1,
+    last_page: 1,
+    per_page: 15,
+    total: 0,
+    from: 0,
+    to: 0,
+  });
+  const [links, setLinks] = useState<any>({});
 
   useEffect(() => {
-    fetchTeams();
+    fetchTeams(1);
   }, []);
+
+  const fetchTeams = async (page: number = 1) => {
+    try {
+      setLoading(true);
+      const response = await teamService.getAll({ page });
+      setTeams(Array.isArray(response.data) ? response.data : []);
+      
+      // Handle pagination metadata
+      if (response.meta) {
+        setPagination({
+          current_page: response.meta.current_page || 1,
+          last_page: response.meta.last_page || 1,
+          per_page: response.meta.per_page || 15,
+          total: response.meta.total || 0,
+          from: response.meta.from || 0,
+          to: response.meta.to || 0,
+        });
+      }
+      
+      if (response.links) {
+        setLinks(response.links);
+      }
+    } catch (error) {
+      console.error('Error fetching teams:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (selectedTeam) {
@@ -77,17 +114,6 @@ export default function Teams() {
     }
   }, [selectedTeam]);
 
-  const fetchTeams = async () => {
-    try {
-      setLoading(true);
-      const response = await teamService.getAll();
-      setTeams(Array.isArray(response.data) ? response.data : []);
-    } catch (error) {
-      console.error('Error fetching teams:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleCreate = () => {
     setSelectedTeam(undefined);
@@ -148,7 +174,7 @@ export default function Teams() {
       setIsModalOpen(false);
       setPassword('');
       setPasswordConfirm('');
-      fetchTeams();
+      fetchTeams(pagination.current_page);
     } catch (error) {
       console.error('Error saving team:', error);
       alert('Error saving team');
@@ -161,7 +187,7 @@ export default function Teams() {
     if (confirm('Are you sure you want to delete this team member?')) {
       try {
         await teamService.delete(id);
-        fetchTeams();
+        fetchTeams(pagination.current_page);
       } catch (error) {
         console.error('Error deleting team:', error);
         alert('Error deleting team');
@@ -214,7 +240,7 @@ export default function Teams() {
         password: '',
         password_confirmation: '',
       });
-      fetchTeams();
+      fetchTeams(pagination.current_page);
     } catch (error: any) {
       console.error('Error creating account:', error);
       alert(error.response?.data?.message || 'Error creating account');
@@ -297,6 +323,61 @@ export default function Teams() {
 
       <div className="bg-white shadow rounded-lg">
         <DataTable data={teams} columns={columns} loading={loading} />
+        
+        {/* Pagination Controls */}
+        {pagination.last_page > 1 && (
+          <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+            <div className="text-sm text-gray-700">
+              Showing <span className="font-medium">{pagination.from}</span> to{' '}
+              <span className="font-medium">{pagination.to}</span> of{' '}
+              <span className="font-medium">{pagination.total}</span> results
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fetchTeams(pagination.current_page - 1)}
+                disabled={pagination.current_page === 1 || loading}
+              >
+                Previous
+              </Button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, pagination.last_page) }, (_, i) => {
+                  let pageNum;
+                  if (pagination.last_page <= 5) {
+                    pageNum = i + 1;
+                  } else if (pagination.current_page <= 3) {
+                    pageNum = i + 1;
+                  } else if (pagination.current_page >= pagination.last_page - 2) {
+                    pageNum = pagination.last_page - 4 + i;
+                  } else {
+                    pageNum = pagination.current_page - 2 + i;
+                  }
+                  
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={pagination.current_page === pageNum ? 'primary' : 'outline'}
+                      size="sm"
+                      onClick={() => fetchTeams(pageNum)}
+                      disabled={loading}
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fetchTeams(pagination.current_page + 1)}
+                disabled={pagination.current_page === pagination.last_page || loading}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       <Modal

@@ -3,7 +3,7 @@ import { Team } from '../types';
 
 export const teamService = {
   async getAll(filters?: Record<string, any>) {
-    const response = await api.get<{ data: Team[] }>('/teams', { params: filters });
+    const response = await api.get<{ data: Team[]; links?: any; meta?: any }>('/teams', { params: filters });
     return response.data;
   },
 

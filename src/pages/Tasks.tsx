@@ -9,6 +9,11 @@ import { Card } from '../components/ui/Card';
 import { FileText, GripVertical, Calendar, User, FolderKanban, Clock, Edit, Trash2, X, Play, Pause, Square } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 
+// Helper function to round numbers
+const round = (value: number, decimals: number) => {
+  return Math.round(value * Math.pow(10, decimals)) / Math.pow(10, decimals);
+};
+
 export default function Tasks() {
   const { user } = useAuthStore();
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -403,6 +408,14 @@ export default function Tasks() {
                       />
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-gray-900 truncate">{task.title}</h3>
+                        {task.assigned_user && (
+                          <div className="flex items-center gap-1 mt-1">
+                            <User className="w-3 h-3 text-gray-400" />
+                            <span className="text-xs text-gray-500">
+                              {task.assigned_user.name}
+                            </span>
+                          </div>
+                        )}
                         {task.assigned_to === user?.id && (task.actual_time || task.actual_time === 0) && (
                           <div className="flex items-center gap-1 mt-1">
                             <Clock className="w-3 h-3 text-orange-600" />
@@ -663,72 +676,150 @@ export default function Tasks() {
               </div>
             )}
 
-            {/* Timer History Section */}
+            {/* Complete Time Log Section */}
             {detailTask.assigned_to === user?.id && detailTask.timers && detailTask.timers.length > 0 && (
               <div className="border-t pt-4">
-                {(() => {
-                  const completedTimers = detailTask.timers.filter((t: any) => t.stopped_at);
-                  return completedTimers.length > 0 ? (
-                    <>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                        <Clock className="w-5 h-5 text-orange-600" />
-                        Time Tracking History ({completedTimers.length} session{completedTimers.length !== 1 ? 's' : ''})
-                      </h3>
-                      <div className="space-y-2 max-h-64 overflow-y-auto">
-                        {completedTimers
-                          .sort((a: any, b: any) => {
-                            const dateA = new Date(b.stopped_at || 0).getTime();
-                            const dateB = new Date(a.stopped_at || 0).getTime();
-                            return dateA - dateB;
-                          })
-                          .map((timer: any) => (
-                      <div key={timer.id} className="p-3 bg-orange-50 rounded-lg border border-orange-100">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Clock className="w-4 h-4 text-orange-600" />
-                              <span className="font-medium text-gray-900">
-                                {timer.total_hours} hrs
+                <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-orange-600" />
+                  Complete Time Log ({detailTask.timers.length} session{detailTask.timers.length !== 1 ? 's' : ''})
+                </h3>
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {detailTask.timers
+                    .sort((a: any, b: any) => {
+                      const dateA = new Date(b.started_at || b.created_at || 0).getTime();
+                      const dateB = new Date(a.started_at || a.created_at || 0).getTime();
+                      return dateA - dateB;
+                    })
+                    .map((timer: any) => {
+                      const isActive = !timer.stopped_at && !timer.paused_at;
+                      const isPaused = timer.paused_at && !timer.stopped_at;
+                      const isCompleted = !!timer.stopped_at;
+                      
+                      // Calculate current time if active
+                      let currentSeconds = timer.total_seconds || 0;
+                      if (isActive && timer.started_at) {
+                        const now = new Date().getTime();
+                        const start = new Date(timer.started_at).getTime();
+                        currentSeconds = currentSeconds + Math.floor((now - start) / 1000);
+                      }
+                      const currentHours = round(currentSeconds / 3600, 2);
+                      
+                      const formatTime = (dateString: string | undefined) => {
+                        if (!dateString) return null;
+                        return new Date(dateString).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit'
+                        });
+                      };
+
+                      return (
+                        <div key={timer.id} className={`p-4 rounded-lg border ${
+                          isActive ? 'bg-green-50 border-green-200' : 
+                          isPaused ? 'bg-yellow-50 border-yellow-200' : 
+                          'bg-orange-50 border-orange-100'
+                        }`}>
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <Clock className={`w-4 h-4 ${
+                                isActive ? 'text-green-600' : 
+                                isPaused ? 'text-yellow-600' : 
+                                'text-orange-600'
+                              }`} />
+                              <span className="font-semibold text-gray-900">
+                                {isActive ? currentHours : timer.total_hours || 0} hrs
                               </span>
                             </div>
-                            <div className="text-xs text-gray-600 space-y-0.5">
-                              {timer.started_at && (
-                                <p>
-                                  Started: {new Date(timer.started_at).toLocaleString('en-US', {
-                                    month: 'short',
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  })}
-                                </p>
-                              )}
-                              {timer.stopped_at && (
-                                <p>
-                                  Ended: {new Date(timer.stopped_at).toLocaleString('en-US', {
-                                    month: 'short',
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  })}
-                                </p>
-                              )}
-                            </div>
+                            <Badge variant={
+                              isActive ? 'success' : 
+                              isPaused ? 'warning' : 
+                              'default'
+                            }>
+                              {isActive ? 'Running' : isPaused ? 'Paused' : 'Completed'}
+                            </Badge>
                           </div>
-                          <Badge variant="success">Completed</Badge>
+                          
+                          <div className="space-y-1.5 text-sm">
+                            {timer.started_at && (
+                              <div className="flex items-start gap-2">
+                                <span className="text-green-600 font-medium min-w-[80px]">
+                                  {timer.paused_at ? 'Started:' : isActive ? 'Started:' : 'Last Started:'}
+                                </span>
+                                <span className="text-gray-700">{formatTime(timer.started_at)}</span>
+                                {timer.paused_at && timer.started_at && (
+                                  <span className="text-gray-500 text-xs ml-2">
+                                    (Ran for {round((new Date(timer.paused_at).getTime() - new Date(timer.started_at).getTime()) / 3600000, 2)} hrs)
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            
+                            {timer.paused_at && (
+                              <div className="flex items-start gap-2">
+                                <span className="text-yellow-600 font-medium min-w-[80px]">Paused:</span>
+                                <span className="text-gray-700">{formatTime(timer.paused_at)}</span>
+                              </div>
+                            )}
+                            
+                            {isActive && timer.started_at && timer.paused_at === null && (
+                              <div className="flex items-start gap-2 text-xs text-blue-600 italic">
+                                <span className="min-w-[80px]">Note:</span>
+                                <span>Timer may have been resumed. Current session started at {formatTime(timer.started_at)}</span>
+                              </div>
+                            )}
+                            
+                            {isPaused && timer.paused_at && timer.started_at && (
+                              <div className="flex items-start gap-2">
+                                <span className="text-blue-600 font-medium min-w-[80px]">Duration:</span>
+                                <span className="text-gray-700">
+                                  {round((new Date(timer.paused_at).getTime() - new Date(timer.started_at).getTime()) / 3600000, 2)} hrs (before pause)
+                                </span>
+                              </div>
+                            )}
+                            
+                            {isActive && timer.started_at && (
+                              <div className="flex items-start gap-2">
+                                <span className="text-blue-600 font-medium min-w-[80px]">Running:</span>
+                                <span className="text-gray-700">
+                                  Since {formatTime(timer.started_at)}
+                                </span>
+                                <span className="text-gray-500 text-xs ml-2">
+                                  ({currentHours} hrs so far)
+                                </span>
+                              </div>
+                            )}
+                            
+                            {timer.stopped_at && (
+                              <div className="flex items-start gap-2">
+                                <span className="text-red-600 font-medium min-w-[80px]">Ended:</span>
+                                <span className="text-gray-700">{formatTime(timer.stopped_at)}</span>
+                              </div>
+                            )}
+                            
+                            {isCompleted && timer.total_hours > 0 && (
+                              <div className="flex items-start gap-2 mt-2 pt-2 border-t border-gray-200">
+                                <span className="text-indigo-600 font-semibold min-w-[80px]">Total:</span>
+                                <span className="text-gray-900 font-semibold">
+                                  {timer.total_hours} hrs worked
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-center py-4">
-                      <Clock className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-sm text-gray-500">
-                        No completed timer sessions yet
-                      </p>
-                    </div>
-                  );
-                })()}
+                      );
+                    })}
+                </div>
+                {detailTask.timers.length === 0 && (
+                  <div className="text-center py-4">
+                    <Clock className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-500">
+                      No timer sessions yet
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
