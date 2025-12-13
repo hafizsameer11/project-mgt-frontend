@@ -106,6 +106,7 @@ export default function Tasks() {
     // Fetch full task details with timers
     try {
       const fullTask = await taskService.getById(task.id);
+      console.log('Fetched task:', fullTask); // Debug log
       setDetailTask(fullTask);
       setIsDetailModalOpen(true);
       // Fetch active timer for this task
@@ -120,6 +121,7 @@ export default function Tasks() {
         }
       }
     } catch (error) {
+      console.error('Error fetching task details:', error);
       // Fallback to the task from list if fetch fails
       setDetailTask(task);
       setIsDetailModalOpen(true);

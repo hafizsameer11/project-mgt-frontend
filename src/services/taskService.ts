@@ -8,8 +8,15 @@ export const taskService = {
   },
 
   async getById(id: number) {
-    const response = await api.get<Task>(`/tasks/${id}`);
-    return response.data;
+    const response = await api.get<any>(`/tasks/${id}`);
+    // Handle wrapped response structure: { data: { ...task... } }
+    // The API returns { data: Task }, so response.data = { data: Task }
+    // We need response.data.data to get the actual Task
+    if (response.data?.data) {
+      return response.data.data as Task;
+    }
+    // Fallback: if not wrapped, return directly
+    return response.data as Task;
   },
 
   async create(data: Partial<Task>) {
