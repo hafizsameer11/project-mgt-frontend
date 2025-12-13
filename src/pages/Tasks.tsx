@@ -103,18 +103,26 @@ export default function Tasks() {
   };
 
   const handleTaskClick = async (task: Task) => {
-    setDetailTask(task);
-    setIsDetailModalOpen(true);
-    // Fetch active timer for this task
-    if (task.assigned_to === user?.id) {
-      try {
-        const response = await taskService.getActiveTimer(task.id);
-        if (response.timer) {
-          setActiveTimers(prev => ({ ...prev, [task.id]: response.timer }));
+    // Fetch full task details with timers
+    try {
+      const fullTask = await taskService.getById(task.id);
+      setDetailTask(fullTask);
+      setIsDetailModalOpen(true);
+      // Fetch active timer for this task
+      if (task.assigned_to === user?.id) {
+        try {
+          const response = await taskService.getActiveTimer(task.id);
+          if (response.timer) {
+            setActiveTimers(prev => ({ ...prev, [task.id]: response.timer }));
+          }
+        } catch (error) {
+          // Ignore errors
         }
-      } catch (error) {
-        // Ignore errors
       }
+    } catch (error) {
+      // Fallback to the task from list if fetch fails
+      setDetailTask(task);
+      setIsDetailModalOpen(true);
     }
   };
 
@@ -391,7 +399,17 @@ export default function Tasks() {
                           handleDragStart(e, task);
                         }}
                       />
-                      <h3 className="font-semibold text-gray-900 truncate flex-1">{task.title}</h3>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-900 truncate">{task.title}</h3>
+                        {task.assigned_to === user?.id && (task.actual_time || task.actual_time === 0) && (
+                          <div className="flex items-center gap-1 mt-1">
+                            <Clock className="w-3 h-3 text-orange-600" />
+                            <span className="text-xs text-gray-600 font-medium">
+                              {task.actual_time || 0} hrs
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
                       {task.priority && (
@@ -580,15 +598,30 @@ export default function Tasks() {
                 </div>
               )}
 
-              {detailTask.actual_time && (
-                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                  <Clock className="w-5 h-5 text-orange-600 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Actual Time</p>
-                    <p className="text-gray-900 font-semibold">{detailTask.actual_time} hrs</p>
-                  </div>
+              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                <Clock className="w-5 h-5 text-orange-600 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-500">Actual Time</p>
+                  <p className="text-gray-900 font-semibold">{detailTask.actual_time || 0} hrs</p>
+                  {detailTask.estimated_hours && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      {detailTask.actual_time && detailTask.estimated_hours ? (
+                        <>
+                          {detailTask.actual_time > detailTask.estimated_hours ? (
+                            <span className="text-red-600">
+                              {((detailTask.actual_time / detailTask.estimated_hours - 1) * 100).toFixed(0)}% over estimate
+                            </span>
+                          ) : (
+                            <span className="text-green-600">
+                              {((1 - detailTask.actual_time / detailTask.estimated_hours) * 100).toFixed(0)}% under estimate
+                            </span>
+                          )}
+                        </>
+                      ) : null}
+                    </p>
+                  )}
                 </div>
-              )}
+              </div>
 
               {detailTask.task_type && (
                 <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
@@ -623,6 +656,75 @@ export default function Tasks() {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Timer History Section */}
+            {detailTask.assigned_to === user?.id && detailTask.timers && detailTask.timers.length > 0 && (
+              <div className="border-t pt-4">
+                {(() => {
+                  const completedTimers = detailTask.timers.filter((t: any) => t.stopped_at);
+                  return completedTimers.length > 0 ? (
+                    <>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                        <Clock className="w-5 h-5 text-orange-600" />
+                        Time Tracking History ({completedTimers.length} session{completedTimers.length !== 1 ? 's' : ''})
+                      </h3>
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {completedTimers
+                          .sort((a: any, b: any) => {
+                            const dateA = new Date(b.stopped_at || 0).getTime();
+                            const dateB = new Date(a.stopped_at || 0).getTime();
+                            return dateA - dateB;
+                          })
+                          .map((timer: any) => (
+                      <div key={timer.id} className="p-3 bg-orange-50 rounded-lg border border-orange-100">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Clock className="w-4 h-4 text-orange-600" />
+                              <span className="font-medium text-gray-900">
+                                {timer.total_hours} hrs
+                              </span>
+                            </div>
+                            <div className="text-xs text-gray-600 space-y-0.5">
+                              {timer.started_at && (
+                                <p>
+                                  Started: {new Date(timer.started_at).toLocaleString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </p>
+                              )}
+                              {timer.stopped_at && (
+                                <p>
+                                  Ended: {new Date(timer.stopped_at).toLocaleString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <Badge variant="success">Completed</Badge>
+                        </div>
+                      </div>
+                    ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-4">
+                      <Clock className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-sm text-gray-500">
+                        No completed timer sessions yet
+                      </p>
+                    </div>
+                  );
+                })()}
               </div>
             )}
 

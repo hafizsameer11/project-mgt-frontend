@@ -87,6 +87,14 @@ export interface Task {
   attachments?: string[];
   task_type?: 'Today' | 'Tomorrow' | 'Next 2–3 Days' | 'This Week' | 'Next Week';
   requirements?: Requirement[];
+  timers?: Array<{
+    id: number;
+    started_at?: string;
+    paused_at?: string;
+    stopped_at?: string;
+    total_seconds: number;
+    total_hours: number;
+  }>;
   created_at: string;
   updated_at: string;
 }
