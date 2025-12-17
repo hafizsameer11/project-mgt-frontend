@@ -75,7 +75,8 @@ export default function Tasks() {
           }
         }
       }
-      setActiveTimers(timerMap);
+      // Merge with existing timers to preserve any that were just set
+      setActiveTimers(prev => ({ ...prev, ...timerMap }));
     };
 
     if (tasks.length > 0 && user?.id) {
@@ -207,7 +208,17 @@ export default function Tasks() {
   const handleStartTimer = async (taskId: number) => {
     try {
       const response = await taskService.startTimer(taskId);
+      // Update the timer state immediately
       setActiveTimers(prev => ({ ...prev, [taskId]: response }));
+      // Also fetch the active timer to ensure we have the latest data
+      try {
+        const timerResponse = await taskService.getActiveTimer(taskId);
+        if (timerResponse.timer) {
+          setActiveTimers(prev => ({ ...prev, [taskId]: timerResponse.timer }));
+        }
+      } catch (error) {
+        // Ignore errors, we already have the response from startTimer
+      }
       fetchTasks();
     } catch (error) {
       console.error('Error starting timer:', error);
@@ -217,14 +228,18 @@ export default function Tasks() {
 
   const handlePauseTimer = async (timerId: number, taskId: number) => {
     try {
-      await taskService.pauseTimer(timerId);
-      setActiveTimers(prev => {
-        const updated = { ...prev };
-        if (updated[taskId]) {
-          updated[taskId] = { ...updated[taskId], paused_at: new Date().toISOString() };
+      const response = await taskService.pauseTimer(timerId);
+      // Update with the full response from the API
+      setActiveTimers(prev => ({ ...prev, [taskId]: response }));
+      // Also fetch the active timer to ensure we have the latest state
+      try {
+        const timerResponse = await taskService.getActiveTimer(taskId);
+        if (timerResponse.timer) {
+          setActiveTimers(prev => ({ ...prev, [taskId]: timerResponse.timer }));
         }
-        return updated;
-      });
+      } catch (error) {
+        // Ignore errors, we already have the response from pauseTimer
+      }
       if (timerIntervals[taskId]) {
         clearInterval(timerIntervals[taskId]);
         setTimerIntervals(prev => {
@@ -242,14 +257,18 @@ export default function Tasks() {
 
   const handleResumeTimer = async (timerId: number, taskId: number) => {
     try {
-      await taskService.resumeTimer(timerId);
-      setActiveTimers(prev => {
-        const updated = { ...prev };
-        if (updated[taskId]) {
-          updated[taskId] = { ...updated[taskId], paused_at: null, started_at: new Date().toISOString() };
+      const response = await taskService.resumeTimer(timerId);
+      // Update with the response from the API
+      setActiveTimers(prev => ({ ...prev, [taskId]: response }));
+      // Also fetch the active timer to ensure we have the latest data
+      try {
+        const timerResponse = await taskService.getActiveTimer(taskId);
+        if (timerResponse.timer) {
+          setActiveTimers(prev => ({ ...prev, [taskId]: timerResponse.timer }));
         }
-        return updated;
-      });
+      } catch (error) {
+        // Ignore errors, we already have the response from resumeTimer
+      }
       fetchTasks();
     } catch (error) {
       console.error('Error resuming timer:', error);
@@ -308,6 +327,20 @@ export default function Tasks() {
 
   const getTasksByStatus = (status: string) => {
     return tasks.filter(task => task.status === status);
+  };
+
+  // Helper function to check if a timer is paused (matching backend logic)
+  const isTimerPaused = (timer: any): boolean => {
+    if (!timer || !timer.paused_at) {
+      return false;
+    }
+    // Timer is paused if paused_at exists AND (resumed_at is null OR paused_at timestamp > resumed_at timestamp)
+    if (!timer.resumed_at) {
+      return true;
+    }
+    const pausedTimestamp = new Date(timer.paused_at).getTime();
+    const resumedTimestamp = new Date(timer.resumed_at).getTime();
+    return pausedTimestamp > resumedTimestamp;
   };
 
   if (loading) {
@@ -448,7 +481,7 @@ export default function Tasks() {
                             >
                               <Play className="w-3 h-3" />
                             </Button>
-                          ) : activeTimers[task.id].paused_at ? (
+                          ) : isTimerPaused(activeTimers[task.id]) ? (
                             <>
                               <Button
                                 size="sm"
@@ -889,7 +922,7 @@ export default function Tasks() {
                       <Play className="w-4 h-4 mr-2" />
                       Start Timer
                     </Button>
-                  ) : activeTimers[detailTask.id].paused_at ? (
+                  ) : isTimerPaused(activeTimers[detailTask.id]) ? (
                     <>
                       <Button
                         variant="primary"
