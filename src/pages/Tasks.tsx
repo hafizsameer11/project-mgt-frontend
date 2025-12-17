@@ -449,18 +449,32 @@ export default function Tasks() {
                               <Play className="w-3 h-3" />
                             </Button>
                           ) : activeTimers[task.id].paused_at ? (
-                            <Button
-                              size="sm"
-                              variant="primary"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleResumeTimer(activeTimers[task.id].id, task.id);
-                              }}
-                              className="opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1"
-                              title="Resume Timer"
-                            >
-                              <Play className="w-3 h-3" />
-                            </Button>
+                            <>
+                              <Button
+                                size="sm"
+                                variant="primary"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleResumeTimer(activeTimers[task.id].id, task.id);
+                                }}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1"
+                                title="Resume Timer"
+                              >
+                                <Play className="w-3 h-3" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="danger"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEndTimer(activeTimers[task.id].id, task.id);
+                                }}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1"
+                                title="End Task"
+                              >
+                                <Square className="w-3 h-3" />
+                              </Button>
+                            </>
                           ) : (
                             <>
                               <Button
@@ -876,14 +890,24 @@ export default function Tasks() {
                       Start Timer
                     </Button>
                   ) : activeTimers[detailTask.id].paused_at ? (
-                    <Button
-                      variant="primary"
-                      onClick={() => handleResumeTimer(activeTimers[detailTask.id].id, detailTask.id)}
-                      className="flex-1"
-                    >
-                      <Play className="w-4 h-4 mr-2" />
-                      Resume Timer
-                    </Button>
+                    <>
+                      <Button
+                        variant="primary"
+                        onClick={() => handleResumeTimer(activeTimers[detailTask.id].id, detailTask.id)}
+                        className="flex-1"
+                      >
+                        <Play className="w-4 h-4 mr-2" />
+                        Resume Timer
+                      </Button>
+                      <Button
+                        variant="danger"
+                        onClick={() => handleEndTimer(activeTimers[detailTask.id].id, detailTask.id)}
+                        className="flex-1"
+                      >
+                        <Square className="w-4 h-4 mr-2" />
+                        End Task
+                      </Button>
+                    </>
                   ) : (
                     <>
                       <Button
