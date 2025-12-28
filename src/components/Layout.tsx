@@ -80,6 +80,7 @@ export default function Layout() {
       { path: '/general-requests', label: 'General Requests', icon: Package },
       { path: '/expenses', label: 'Expenses', icon: DollarSign },
       { path: '/planned-expenses', label: 'Planned Expenses', icon: DollarSign },
+      { path: '/incomes', label: 'Income Records', icon: DollarSign },
       { path: '/vendors', label: 'Vendors', icon: Store },
       { path: '/attendance', label: 'Attendance', icon: Calendar },
       { path: '/payroll', label: 'Payroll', icon: CreditCard },

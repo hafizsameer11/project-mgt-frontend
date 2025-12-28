@@ -18,6 +18,7 @@ import Chat from './pages/Chat';
 import ProjectDetail from './pages/ProjectDetail';
 import Expenses from './pages/Expenses';
 import PlannedExpenses from './pages/PlannedExpenses';
+import Incomes from './pages/Incomes';
 import Vendors from './pages/Vendors';
 import Attendance from './pages/Attendance';
 import Payroll from './pages/Payroll';
@@ -80,6 +81,7 @@ function App() {
                     <Route path="chat" element={<Chat />} />
                     <Route path="expenses" element={<Expenses />} />
                     <Route path="planned-expenses" element={<PlannedExpenses />} />
+                    <Route path="incomes" element={<Incomes />} />
                     <Route path="vendors" element={<Vendors />} />
                     <Route path="attendance" element={<Attendance />} />
                     <Route path="payroll" element={<Payroll />} />
