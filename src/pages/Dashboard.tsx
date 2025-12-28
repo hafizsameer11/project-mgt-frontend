@@ -76,11 +76,11 @@ export default function Dashboard() {
 
         <Card>
           <div className="text-2xl font-bold text-gray-900">
-            ${stats.revenue.total?.toLocaleString() || '0'}
+            PKR {stats.revenue.total?.toLocaleString() || '0'}
           </div>
           <div className="text-sm text-gray-500 mt-1">Total Revenue</div>
           <div className="text-sm text-gray-700 mt-2">
-            ${stats.revenue.pending?.toLocaleString() || '0'} Pending
+            PKR {stats.revenue.pending?.toLocaleString() || '0'} Pending
           </div>
         </Card>
       </div>
@@ -119,7 +119,7 @@ export default function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />
-                <Tooltip formatter={(value) => `$${Number(value).toLocaleString()}`} />
+                <Tooltip formatter={(value) => `PKR ${Number(value).toLocaleString()}`} />
                 <Legend />
                 <Line type="monotone" dataKey="total" stroke="#8884d8" strokeWidth={2} name="Revenue" />
               </LineChart>

@@ -51,7 +51,7 @@ export default function ClientPayments() {
       key: 'amount',
       header: 'Amount',
       render: (payment: any) => (
-        <div className="font-semibold">${payment.amount?.toLocaleString() || '0'}</div>
+        <div className="font-semibold">PKR {payment.amount?.toLocaleString() || '0'}</div>
       ),
     },
     {
@@ -133,7 +133,7 @@ export default function ClientPayments() {
         </Card>
         <Card className="p-4">
           <p className="text-sm text-gray-600">Total Amount Paid</p>
-          <p className="text-2xl font-bold text-green-600">${totalPaid.toLocaleString()}</p>
+          <p className="text-2xl font-bold text-green-600">PKR {totalPaid.toLocaleString()}</p>
         </Card>
         <Card className="p-4">
           <p className="text-sm text-gray-600">Pending Payments</p>

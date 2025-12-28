@@ -23,7 +23,7 @@ export default function Expenses() {
     project_id: '',
     expense_date: new Date().toISOString().split('T')[0],
     amount: '',
-    currency: 'USD',
+    currency: 'PKR',
     payment_method: 'cash',
     description: '',
   });
@@ -76,7 +76,7 @@ export default function Expenses() {
       project_id: '',
       expense_date: new Date().toISOString().split('T')[0],
       amount: '',
-      currency: 'USD',
+      currency: 'PKR',
       payment_method: 'cash',
       description: '',
     });

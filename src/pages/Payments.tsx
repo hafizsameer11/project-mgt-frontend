@@ -85,12 +85,12 @@ export default function Payments() {
     {
       key: 'total_assigned_amount',
       header: 'Total Assigned',
-      render: (payment: DeveloperPayment) => payment.total_assigned_amount ? `$${payment.total_assigned_amount.toLocaleString()}` : 'N/A',
+      render: (payment: DeveloperPayment) => payment.total_assigned_amount ? `PKR ${payment.total_assigned_amount.toLocaleString()}` : 'N/A',
     },
     {
       key: 'amount_paid',
       header: 'Paid',
-      render: (payment: DeveloperPayment) => `$${payment.amount_paid.toLocaleString()}`,
+      render: (payment: DeveloperPayment) => `PKR ${payment.amount_paid.toLocaleString()}`,
     },
     {
       key: 'remaining_amount',
@@ -98,9 +98,9 @@ export default function Payments() {
       render: (payment: DeveloperPayment) => {
         const remaining = payment.remaining_amount || 0;
         return remaining > 0 ? (
-          <span className="text-red-600 font-semibold">${remaining.toLocaleString()}</span>
+          <span className="text-red-600 font-semibold">PKR {remaining.toLocaleString()}</span>
         ) : (
-          <span className="text-green-600 font-semibold">$0</span>
+          <span className="text-green-600 font-semibold">PKR 0</span>
         );
       },
     },
@@ -155,12 +155,12 @@ export default function Payments() {
     {
       key: 'total_amount',
       header: 'Total',
-      render: (payment: ClientPayment) => payment.total_amount ? `$${payment.total_amount.toLocaleString()}` : 'N/A',
+      render: (payment: ClientPayment) => payment.total_amount ? `PKR ${payment.total_amount.toLocaleString()}` : 'N/A',
     },
     {
       key: 'amount_paid',
       header: 'Paid',
-      render: (payment: ClientPayment) => `$${payment.amount_paid.toLocaleString()}`,
+      render: (payment: ClientPayment) => `PKR ${payment.amount_paid.toLocaleString()}`,
     },
     {
       key: 'remaining_amount',
@@ -168,9 +168,9 @@ export default function Payments() {
       render: (payment: ClientPayment) => {
         const remaining = payment.remaining_amount || 0;
         return remaining > 0 ? (
-          <span className="text-red-600 font-semibold">${remaining.toLocaleString()}</span>
+          <span className="text-red-600 font-semibold">PKR {remaining.toLocaleString()}</span>
         ) : (
-          <span className="text-green-600 font-semibold">$0</span>
+          <span className="text-green-600 font-semibold">PKR 0</span>
         );
       },
     },

@@ -350,7 +350,7 @@ export default function ProjectDetail() {
         <div className="flex items-center gap-4">
           <Badge variant="info">{project.status}</Badge>
           {project.client && <span className="text-gray-600">Client: {project.client.name}</span>}
-          {project.budget && <span className="text-gray-600">Budget: ${project.budget.toLocaleString()}</span>}
+          {project.budget && <span className="text-gray-600">Budget: PKR {project.budget.toLocaleString()}</span>}
         </div>
       </div>
 
@@ -403,7 +403,7 @@ export default function ProjectDetail() {
               <div className="mb-4 p-4 bg-indigo-50 rounded-lg border border-indigo-200">
                 <p className="text-sm text-indigo-800">
                   <strong>💡 Allocate Budget to Business Developer:</strong> Set payment for BD on this project. 
-                  Choose between <strong>Percentage</strong> (e.g., 15% of project budget) or <strong>Fixed Amount</strong> (e.g., $500).
+                  Choose between <strong>Percentage</strong> (e.g., 15% of project budget) or <strong>Fixed Amount</strong> (e.g., PKR 500).
                   The system will automatically calculate the total amount based on your choice.
                 </p>
               </div>
@@ -440,17 +440,17 @@ export default function ProjectDetail() {
                 {
                   key: 'fixed_amount',
                   header: 'Fixed Amount',
-                  render: (payment: any) => payment.fixed_amount ? `$${payment.fixed_amount.toLocaleString()}` : 'N/A',
+                  render: (payment: any) => payment.fixed_amount ? `PKR ${payment.fixed_amount.toLocaleString()}` : 'N/A',
                 },
                 {
                   key: 'calculated_amount',
                   header: 'Calculated Amount',
-                  render: (payment: any) => payment.calculated_amount ? `$${payment.calculated_amount.toLocaleString()}` : 'N/A',
+                  render: (payment: any) => payment.calculated_amount ? `PKR ${payment.calculated_amount.toLocaleString()}` : 'N/A',
                 },
                 {
                   key: 'amount_paid',
                   header: 'Paid',
-                  render: (payment: any) => `$${payment.amount_paid.toLocaleString()}`,
+                  render: (payment: any) => `PKR ${payment.amount_paid.toLocaleString()}`,
                 },
                 {
                   key: 'remaining_amount',
@@ -458,9 +458,9 @@ export default function ProjectDetail() {
                   render: (payment: any) => {
                     const remaining = payment.remaining_amount || 0;
                     return remaining > 0 ? (
-                      <span className="text-red-600 font-semibold">${remaining.toLocaleString()}</span>
+                      <span className="text-red-600 font-semibold">PKR {remaining.toLocaleString()}</span>
                     ) : (
-                      <span className="text-green-600 font-semibold">$0</span>
+                      <span className="text-green-600 font-semibold">PKR 0</span>
                     );
                   },
                 },
@@ -519,7 +519,7 @@ export default function ProjectDetail() {
               <div className="mb-4 p-4 bg-green-50 rounded-lg border border-green-200">
                 <p className="text-sm text-green-800">
                   <strong>💡 Allocate Budget to Project Manager:</strong> Set payment for PM on this project. 
-                  Choose between <strong>Percentage</strong> (e.g., 10% of project budget) or <strong>Fixed Amount</strong> (e.g., $1000).
+                  Choose between <strong>Percentage</strong> (e.g., 10% of project budget) or <strong>Fixed Amount</strong> (e.g., PKR 1000).
                   The system will automatically calculate the total amount based on your choice.
                 </p>
               </div>
@@ -556,17 +556,17 @@ export default function ProjectDetail() {
                 {
                   key: 'fixed_amount',
                   header: 'Fixed Amount',
-                  render: (payment: any) => payment.fixed_amount ? `$${payment.fixed_amount.toLocaleString()}` : 'N/A',
+                  render: (payment: any) => payment.fixed_amount ? `PKR ${payment.fixed_amount.toLocaleString()}` : 'N/A',
                 },
                 {
                   key: 'calculated_amount',
                   header: 'Calculated Amount',
-                  render: (payment: any) => payment.calculated_amount ? `$${payment.calculated_amount.toLocaleString()}` : 'N/A',
+                  render: (payment: any) => payment.calculated_amount ? `PKR ${payment.calculated_amount.toLocaleString()}` : 'N/A',
                 },
                 {
                   key: 'amount_paid',
                   header: 'Paid',
-                  render: (payment: any) => `$${payment.amount_paid.toLocaleString()}`,
+                  render: (payment: any) => `PKR ${payment.amount_paid.toLocaleString()}`,
                 },
                 {
                   key: 'remaining_amount',
@@ -574,9 +574,9 @@ export default function ProjectDetail() {
                   render: (payment: any) => {
                     const remaining = payment.remaining_amount || 0;
                     return remaining > 0 ? (
-                      <span className="text-red-600 font-semibold">${remaining.toLocaleString()}</span>
+                      <span className="text-red-600 font-semibold">PKR {remaining.toLocaleString()}</span>
                     ) : (
-                      <span className="text-green-600 font-semibold">$0</span>
+                      <span className="text-green-600 font-semibold">PKR 0</span>
                     );
                   },
                 },
@@ -658,12 +658,12 @@ export default function ProjectDetail() {
                 {
                   key: 'total_assigned_amount',
                   header: 'Assigned Amount',
-                  render: (payment: any) => payment.total_assigned_amount ? `$${payment.total_assigned_amount.toLocaleString()}` : 'N/A',
+                  render: (payment: any) => payment.total_assigned_amount ? `PKR ${payment.total_assigned_amount.toLocaleString()}` : 'N/A',
                 },
                 {
                   key: 'amount_paid',
                   header: 'Paid',
-                  render: (payment: any) => `$${payment.amount_paid.toLocaleString()}`,
+                  render: (payment: any) => `PKR ${payment.amount_paid.toLocaleString()}`,
                 },
                 {
                   key: 'remaining_amount',
@@ -671,9 +671,9 @@ export default function ProjectDetail() {
                   render: (payment: any) => {
                     const remaining = payment.remaining_amount || 0;
                     return remaining > 0 ? (
-                      <span className="text-red-600 font-semibold">${remaining.toLocaleString()}</span>
+                      <span className="text-red-600 font-semibold">PKR {remaining.toLocaleString()}</span>
                     ) : (
-                      <span className="text-green-600 font-semibold">$0</span>
+                      <span className="text-green-600 font-semibold">PKR 0</span>
                     );
                   },
                 },

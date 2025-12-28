@@ -277,7 +277,7 @@ export default function Teams() {
     {
       key: 'salary_amount',
       header: 'Salary',
-      render: (team: Team) => team.salary_amount ? `$${team.salary_amount.toLocaleString()}` : 'N/A',
+      render: (team: Team) => team.salary_amount ? `PKR ${team.salary_amount.toLocaleString()}` : 'N/A',
     },
     {
       key: 'user_account',

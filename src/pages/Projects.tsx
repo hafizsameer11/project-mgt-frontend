@@ -8,6 +8,7 @@ import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { formatCurrency } from '../lib/currency';
 
 export default function Projects() {
   const navigate = useNavigate();
@@ -97,7 +98,7 @@ export default function Projects() {
     {
       key: 'budget',
       header: 'Budget',
-      render: (project: Project) => project.budget ? `$${project.budget.toLocaleString()}` : 'N/A',
+      render: (project: Project) => formatCurrency(project.budget),
     },
     {
       key: 'status',

@@ -86,12 +86,12 @@ export default function TeamMemberDashboard() {
       key: 'total_assigned_amount',
       header: 'Total Assigned',
       render: (payment: DeveloperPayment) =>
-        payment.total_assigned_amount ? `$${payment.total_assigned_amount.toLocaleString()}` : 'N/A',
+        payment.total_assigned_amount ? `PKR ${payment.total_assigned_amount.toLocaleString()}` : 'N/A',
     },
     {
       key: 'amount_paid',
       header: 'Amount Paid',
-      render: (payment: DeveloperPayment) => `$${(payment.amount_paid || 0).toLocaleString()}`,
+      render: (payment: DeveloperPayment) => `PKR ${(payment.amount_paid || 0).toLocaleString()}`,
     },
     {
       key: 'remaining_amount',
@@ -99,9 +99,9 @@ export default function TeamMemberDashboard() {
       render: (payment: DeveloperPayment) => {
         const remaining = payment.remaining_amount || 0;
         return remaining > 0 ? (
-          <span className="text-red-600 font-semibold">${remaining.toLocaleString()}</span>
+          <span className="text-red-600 font-semibold">PKR {remaining.toLocaleString()}</span>
         ) : (
-          <span className="text-green-600 font-semibold">$0</span>
+          <span className="text-green-600 font-semibold">PKR 0</span>
         );
       },
     },
@@ -187,7 +187,7 @@ export default function TeamMemberDashboard() {
             </div>
             <div>
               <div className="text-2xl font-bold text-gray-900">
-                ${dashboard.stats?.total_earned?.toLocaleString() || '0'}
+                PKR {dashboard.stats?.total_earned?.toLocaleString() || '0'}
               </div>
               <div className="text-sm text-gray-500">Total Earned</div>
             </div>
@@ -201,7 +201,7 @@ export default function TeamMemberDashboard() {
             </div>
             <div>
               <div className="text-2xl font-bold text-gray-900">
-                ${dashboard.stats?.pending_balance?.toLocaleString() || '0'}
+                PKR {dashboard.stats?.pending_balance?.toLocaleString() || '0'}
               </div>
               <div className="text-sm text-gray-500">Pending Balance</div>
             </div>

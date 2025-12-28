@@ -148,7 +148,7 @@ export default function PaymentRequests() {
     {
       key: 'amount',
       header: 'Amount',
-      render: (req: PaymentRequest) => `$${req.amount.toLocaleString()}`,
+      render: (req: PaymentRequest) => `PKR ${req.amount.toLocaleString()}`,
     },
     {
       key: 'status',
