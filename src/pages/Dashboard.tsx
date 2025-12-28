@@ -85,6 +85,93 @@ export default function Dashboard() {
         </Card>
       </div>
 
+      {/* Financial Overview */}
+      {stats.financial && (
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+          <Card>
+            <div className="text-2xl font-bold text-green-600">
+              PKR {stats.financial.income.total?.toLocaleString() || '0'}
+            </div>
+            <div className="text-sm text-gray-500 mt-1">Current Month Income</div>
+            <div className="text-xs text-gray-600 mt-2 space-y-1">
+              <div>Payments: PKR {stats.financial.income.from_client_payments?.toLocaleString() || '0'}</div>
+              <div>Separate: PKR {stats.financial.income.from_separate_income?.toLocaleString() || '0'}</div>
+            </div>
+          </Card>
+
+          <Card>
+            <div className="text-2xl font-bold text-red-600">
+              PKR {stats.financial.expenses.total?.toLocaleString() || '0'}
+            </div>
+            <div className="text-sm text-gray-500 mt-1">Total Expenses</div>
+            <div className="text-xs text-gray-600 mt-2 space-y-1">
+              <div>Planned: PKR {stats.financial.expenses.planned?.toLocaleString() || '0'}</div>
+              <div>Actual: PKR {stats.financial.expenses.actual?.toLocaleString() || '0'}</div>
+            </div>
+          </Card>
+
+          <Card>
+            <div className={`text-2xl font-bold ${stats.financial.income_gap > 0 ? 'text-red-600' : 'text-green-600'}`}>
+              PKR {Math.abs(stats.financial.income_gap || 0).toLocaleString()}
+            </div>
+            <div className="text-sm text-gray-500 mt-1">
+              {stats.financial.income_gap > 0 ? 'Income Gap' : 'Income Surplus'}
+            </div>
+            <div className="text-xs text-gray-600 mt-2">
+              Required: PKR {stats.financial.required_amount?.toLocaleString() || '0'}
+            </div>
+          </Card>
+
+          <Card>
+            <div className={`text-2xl font-bold ${stats.financial.current_balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              PKR {stats.financial.current_balance?.toLocaleString() || '0'}
+            </div>
+            <div className="text-sm text-gray-500 mt-1">Current Balance</div>
+            <div className="text-xs text-gray-600 mt-2">
+              Income - Actual Expenses
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Expense Breakdown */}
+      {stats.financial && stats.financial.expenses.breakdown && (
+        <Card title="Expense Breakdown (Current Month)" className="mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div>
+              <div className="text-lg font-semibold text-gray-900">
+                PKR {stats.financial.expenses.breakdown.regular_expenses?.toLocaleString() || '0'}
+              </div>
+              <div className="text-xs text-gray-500">Regular Expenses</div>
+            </div>
+            <div>
+              <div className="text-lg font-semibold text-gray-900">
+                PKR {stats.financial.expenses.breakdown.developer_payments?.toLocaleString() || '0'}
+              </div>
+              <div className="text-xs text-gray-500">Developer Payments</div>
+            </div>
+            <div>
+              <div className="text-lg font-semibold text-gray-900">
+                PKR {stats.financial.expenses.breakdown.pm_payments?.toLocaleString() || '0'}
+              </div>
+              <div className="text-xs text-gray-500">PM Payments</div>
+            </div>
+            <div>
+              <div className="text-lg font-semibold text-gray-900">
+                PKR {stats.financial.expenses.breakdown.bd_payments?.toLocaleString() || '0'}
+              </div>
+              <div className="text-xs text-gray-500">BD Payments</div>
+            </div>
+            <div>
+              <div className="text-lg font-semibold text-gray-900">
+                PKR {stats.financial.expenses.breakdown.vendor_payments?.toLocaleString() || '0'}
+              </div>
+              <div className="text-xs text-gray-500">Vendor Payments</div>
+            </div>
+          </div>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 mb-8">
         <Card title="Project Status Distribution">
           {projectStatusData.length > 0 ? (

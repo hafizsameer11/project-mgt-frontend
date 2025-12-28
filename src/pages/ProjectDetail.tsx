@@ -705,6 +705,24 @@ export default function ProjectDetail() {
                       }}>
                         Add Payment
                       </Button>
+                      {payment.remaining_amount > 0 && (
+                        <Button size="sm" variant="success" onClick={async () => {
+                          if (confirm(`Mark remaining amount (PKR ${payment.remaining_amount?.toLocaleString()}) as paid?`)) {
+                            try {
+                              await api.post(`/developer-payments/${payment.id}/mark-as-paid`, {
+                                payment_date: new Date().toISOString().split('T')[0],
+                                notes: 'Marked as paid',
+                              });
+                              fetchDeveloperPayments();
+                            } catch (error) {
+                              console.error('Error marking payment as paid:', error);
+                              alert('Error marking payment as paid');
+                            }
+                          }
+                        }}>
+                          Mark as Paid
+                        </Button>
+                      )}
                     </div>
                   ),
                 }] : []),

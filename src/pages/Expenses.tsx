@@ -215,6 +215,43 @@ export default function Expenses() {
               Submit
             </Button>
           )}
+          {expense.status === 'submitted' && user?.role === 'Admin' && (
+            <>
+              <Button 
+                size="sm" 
+                variant="success" 
+                onClick={async () => {
+                  try {
+                    await api.post(`/expenses/${expense.id}/approve`);
+                    fetchExpenses();
+                  } catch (error) {
+                    console.error('Error approving expense:', error);
+                    alert('Error approving expense');
+                  }
+                }}
+              >
+                Approve
+              </Button>
+              <Button 
+                size="sm" 
+                variant="danger" 
+                onClick={async () => {
+                  const reason = prompt('Enter rejection reason:');
+                  if (reason) {
+                    try {
+                      await api.post(`/expenses/${expense.id}/reject`, { rejection_reason: reason });
+                      fetchExpenses();
+                    } catch (error) {
+                      console.error('Error rejecting expense:', error);
+                      alert('Error rejecting expense');
+                    }
+                  }
+                }}
+              >
+                Reject
+              </Button>
+            </>
+          )}
         </div>
       ),
     },
