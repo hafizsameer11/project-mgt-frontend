@@ -28,6 +28,12 @@ export default function Expenses() {
     description: '',
   });
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [categoryFormData, setCategoryFormData] = useState({
+    name: '',
+    description: '',
+    code: '',
+  });
 
   useEffect(() => {
     fetchExpenses();
@@ -53,10 +59,28 @@ export default function Expenses() {
 
   const fetchCategories = async () => {
     try {
-      const response = await api.get('/expense-categories');
+      const response = await api.get('/expense-categories', {
+        params: { include_inactive: true }
+      });
       setCategories(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Error fetching categories:', error);
+    }
+  };
+
+  const handleCreateCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await api.post('/expense-categories', {
+        ...categoryFormData,
+        is_active: true,
+      });
+      setIsCategoryModalOpen(false);
+      setCategoryFormData({ name: '', description: '', code: '' });
+      fetchCategories();
+    } catch (error) {
+      console.error('Error creating category:', error);
+      alert('Error creating category');
     }
   };
 
@@ -219,15 +243,28 @@ export default function Expenses() {
         size="lg"
       >
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Select
-            label="Category"
-            value={formData.expense_category_id}
-            onChange={(e) => setFormData({ ...formData, expense_category_id: e.target.value })}
-            options={[
-              { value: '', label: 'Select category' },
-              ...categories.map(cat => ({ value: cat.id.toString(), label: cat.name })),
-            ]}
-          />
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-medium text-gray-700">Category</label>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setIsCategoryModalOpen(true)}
+                className="text-xs"
+              >
+                + Add Category
+              </Button>
+            </div>
+            <Select
+              value={formData.expense_category_id}
+              onChange={(e) => setFormData({ ...formData, expense_category_id: e.target.value })}
+              options={[
+                { value: '', label: 'Select category (optional)' },
+                ...categories.map(cat => ({ value: cat.id.toString(), label: cat.name })),
+              ]}
+            />
+          </div>
 
           <Select
             label="Project"
@@ -291,6 +328,56 @@ export default function Expenses() {
             <Button type="submit" isLoading={isSubmitting}>
               {selectedExpense ? 'Update' : 'Create'} Expense
             </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Category Creation Modal */}
+      <Modal
+        isOpen={isCategoryModalOpen}
+        onClose={() => {
+          setIsCategoryModalOpen(false);
+          setCategoryFormData({ name: '', description: '', code: '' });
+        }}
+        title="Add Expense Category"
+        size="md"
+      >
+        <form onSubmit={handleCreateCategory} className="space-y-4">
+          <Input
+            label="Category Name *"
+            value={categoryFormData.name}
+            onChange={(e) => setCategoryFormData({ ...categoryFormData, name: e.target.value })}
+            required
+            placeholder="e.g., Office Supplies, Travel, Utilities"
+          />
+
+          <Input
+            label="Code (optional)"
+            value={categoryFormData.code}
+            onChange={(e) => setCategoryFormData({ ...categoryFormData, code: e.target.value })}
+            placeholder="e.g., OFF-SUP, TRV, UTIL"
+          />
+
+          <Textarea
+            label="Description"
+            rows={3}
+            value={categoryFormData.description}
+            onChange={(e) => setCategoryFormData({ ...categoryFormData, description: e.target.value })}
+            placeholder="Brief description of this category"
+          />
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setIsCategoryModalOpen(false);
+                setCategoryFormData({ name: '', description: '', code: '' });
+              }}
+            >
+              Cancel
+            </Button>
+            <Button type="submit">Create Category</Button>
           </div>
         </form>
       </Modal>
