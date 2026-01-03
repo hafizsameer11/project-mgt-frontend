@@ -137,7 +137,7 @@ export default function Dashboard() {
       {/* Expense Breakdown */}
       {stats.financial && stats.financial.expenses.breakdown && (
         <Card title="Expense Breakdown (Current Month)" className="mb-8">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <div>
               <div className="text-lg font-semibold text-gray-900">
                 PKR {stats.financial.expenses.breakdown.regular_expenses?.toLocaleString() || '0'}
@@ -166,6 +166,14 @@ export default function Dashboard() {
               <div className="text-lg font-semibold text-gray-900">
                 PKR {stats.financial.expenses.breakdown.vendor_payments?.toLocaleString() || '0'}
               </div>
+              <div className="text-xs text-gray-500">Vendor Payments</div>
+            </div>
+            <div>
+              <div className="text-lg font-semibold text-gray-900">
+                PKR {stats.financial.expenses.breakdown.advance_payments?.toLocaleString() || '0'}
+              </div>
+              <div className="text-xs text-gray-500">Advance Payments</div>
+            </div>
               <div className="text-xs text-gray-500">Vendor Payments</div>
             </div>
           </div>
