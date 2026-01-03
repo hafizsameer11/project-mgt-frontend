@@ -81,7 +81,7 @@ export default function Layout() {
       { path: '/expenses', label: 'Expenses', icon: DollarSign },
       { path: '/planned-expenses', label: 'Planned Expenses', icon: DollarSign },
       { path: '/incomes', label: 'Income Records', icon: DollarSign },
-      { path: '/advance-payments', label: 'Advance Payments (Khata)', icon: DollarSign },
+      { path: '/advance-payments', label: 'Advance Payments', icon: CreditCard },
       { path: '/vendors', label: 'Vendors', icon: Store },
       { path: '/attendance', label: 'Attendance', icon: Calendar },
       { path: '/payroll', label: 'Payroll', icon: CreditCard },

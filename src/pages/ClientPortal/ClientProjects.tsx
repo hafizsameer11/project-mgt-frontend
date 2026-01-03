@@ -5,12 +5,25 @@ import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { DataTable } from '../../components/ui/DataTable';
-import { FolderKanban, Calendar, Users, DollarSign } from 'lucide-react';
+import { FolderKanban, Calendar, Users, DollarSign, Plus } from 'lucide-react';
+import { useToast } from '../../hooks/useToast';
 
 export default function ClientProjects() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    budget: '',
+    start_date: '',
+    end_date: '',
+    project_type: '',
+    priority: 'Medium',
+    tags: [] as string[],
+  });
 
   useEffect(() => {
     fetchProjects();
@@ -23,8 +36,47 @@ export default function ClientProjects() {
       setProjects(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching projects:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load projects',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCreateProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const data = {
+        ...formData,
+        budget: formData.budget ? parseFloat(formData.budget) : null,
+        tags: formData.tags,
+      };
+      await clientPortalService.createProject(data);
+      toast({
+        title: 'Success',
+        description: 'Project created successfully',
+      });
+      setShowCreateModal(false);
+      setFormData({
+        title: '',
+        description: '',
+        budget: '',
+        start_date: '',
+        end_date: '',
+        project_type: '',
+        priority: 'Medium',
+        tags: [],
+      });
+      fetchProjects();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.response?.data?.message || 'Failed to create project',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -139,19 +191,122 @@ export default function ClientProjects() {
 
   return (
     <div className="px-4 py-6 sm:px-0">
-      <div className="mb-8">
-        <Button variant="outline" onClick={() => navigate('/client-portal')} className="mb-4">
-          ← Back to Dashboard
+      <div className="mb-8 flex justify-between items-start">
+        <div>
+          <Button variant="outline" onClick={() => navigate('/client-portal')} className="mb-4">
+            ← Back to Dashboard
+          </Button>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
+            My Projects
+          </h1>
+          <p className="text-gray-600">View all your projects and their progress</p>
+        </div>
+        <Button onClick={() => setShowCreateModal(true)} className="flex items-center gap-2">
+          <Plus className="w-4 h-4" />
+          Create Project
         </Button>
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
-          My Projects
-        </h1>
-        <p className="text-gray-600">View all your projects and their progress</p>
       </div>
 
       <Card>
         <DataTable data={projects} columns={columns} loading={loading} />
       </Card>
+
+      {/* Create Project Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <h2 className="text-2xl font-bold mb-4">Create New Project</h2>
+              <form onSubmit={handleCreateProject} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Project Title *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-md"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Description</label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-md"
+                    rows={3}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Budget</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.budget}
+                      onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Priority</label>
+                    <select
+                      value={formData.priority}
+                      onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-md"
+                    >
+                      <option value="Low">Low</option>
+                      <option value="Medium">Medium</option>
+                      <option value="High">High</option>
+                      <option value="Critical">Critical</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Start Date</label>
+                    <input
+                      type="date"
+                      value={formData.start_date}
+                      onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">End Date</label>
+                    <input
+                      type="date"
+                      value={formData.end_date}
+                      onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-md"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Project Type</label>
+                  <input
+                    type="text"
+                    value={formData.project_type}
+                    onChange={(e) => setFormData({ ...formData, project_type: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-md"
+                    placeholder="e.g., Web Application, Mobile App"
+                  />
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowCreateModal(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit">Create Project</Button>
+                </div>
+              </form>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

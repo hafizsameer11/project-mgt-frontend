@@ -174,8 +174,6 @@ export default function Dashboard() {
               </div>
               <div className="text-xs text-gray-500">Advance Payments</div>
             </div>
-              <div className="text-xs text-gray-500">Vendor Payments</div>
-            </div>
           </div>
         </Card>
       )}

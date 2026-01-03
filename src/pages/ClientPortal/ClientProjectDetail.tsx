@@ -83,11 +83,16 @@ export default function ClientProjectDetail() {
   }
 
   // Get developers for this project with name logic
-  const getDeveloperName = (userId: number) => {
-    if (!dashboard) return 'Developer';
+  const getDeveloperName = (task: any) => {
+    // First check if display_name is set (from backend alias)
+    if (task.assigned_user_display_name) {
+      return task.assigned_user_display_name;
+    }
+    
+    if (!task.assigned_to || !dashboard) return 'Unassigned';
     const developers = dashboard.developers[project.id] || [];
-    const dev = developers.find((d: any) => d.user_id === userId);
-    return dev ? dev.name : 'Developer';
+    const dev = developers.find((d: any) => d.user_id === task.assigned_to);
+    return dev ? dev.name : (task.assigned_user?.name || 'Developer');
   };
 
   const projectTasks = project.tasks || [];
@@ -227,7 +232,7 @@ export default function ClientProjectDetail() {
                   header: 'Developer',
                   render: (task: any) => {
                     if (!task.assigned_to) return 'Unassigned';
-                    return getDeveloperName(task.assigned_to);
+                    return getDeveloperName(task);
                   },
                 },
                 {

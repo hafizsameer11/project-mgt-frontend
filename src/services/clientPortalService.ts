@@ -46,5 +46,25 @@ export const clientPortalService = {
     const response = await api.get('/client-portal/documents');
     return response.data;
   },
+
+  async createProject(data: any) {
+    const response = await api.post('/client-portal/projects', data);
+    return response.data;
+  },
+
+  async updateProject(id: number, data: any) {
+    const response = await api.put(`/client-portal/projects/${id}`, data);
+    return response.data;
+  },
+
+  async createTask(data: any) {
+    const response = await api.post('/client-portal/tasks', data);
+    return response.data;
+  },
+
+  async updateTask(id: number, data: any) {
+    const response = await api.put(`/client-portal/tasks/${id}`, data);
+    return response.data;
+  },
 };
 
